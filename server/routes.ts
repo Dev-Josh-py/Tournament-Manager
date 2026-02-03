@@ -110,6 +110,16 @@ export async function registerRoutes(
     }
   });
 
+  // Recalculate all scores (admin endpoint)
+  app.post('/api/admin/recalculate-scores', async (req, res) => {
+    try {
+      const result = await storage.recalculateAllScores();
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
   // SEED DATA
   // Initialize standard data if empty
   await seedDatabase();

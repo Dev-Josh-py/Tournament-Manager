@@ -26,17 +26,18 @@ export interface IStorage {
   getRounds(): Promise<RoundWithCourse[]>;
   getRound(id: number): Promise<RoundWithCourse & { holes: Hole[] } | undefined>;
   getRoundScores(roundId: number): Promise<Score[]>;
-  
+
   // Write
   createTeam(team: any): Promise<Team>;
   createPlayer(player: any): Promise<Player>;
   createRound(round: any): Promise<Round>;
   createCourse(course: any): Promise<Course>;
   createHole(hole: any): Promise<Hole>;
-  
+
   // Scoring
   submitScore(data: SubmitScoreRequest): Promise<Score>;
   calculateLeaderboards(): Promise<{ tournament: LeaderboardEntry[], rounds: Record<number, RoundLeaderboardEntry[]> }>;
+  recalculateAllScores(): Promise<{ success: boolean; updated: number }>;
 
   // Round Handicaps
   getRoundHandicaps(roundId: number): Promise<RoundHandicapDisplay[]>;
@@ -231,6 +232,63 @@ export class DatabaseStorage implements IStorage {
         .set({ netScore, stablefordPoints, handicapUsed: handicapToUse })
         .where(eq(scores.id, score.id));
     }
+  }
+
+  async recalculateAllScores(): Promise<{ success: boolean; updated: number }> {
+    // Get all rounds and their holes
+    const allRounds = await this.getRounds();
+    let totalUpdated = 0;
+
+    // Get all players for handicap lookup
+    const playerRecords = await db.select().from(players);
+    const playerHandicapMap = new Map(
+      playerRecords.map(p => [p.id, p.handicap])
+    );
+
+    // Process each round
+    for (const round of allRounds) {
+      const roundWithHoles = await this.getRound(round.id);
+      if (!roundWithHoles) continue;
+
+      // Get all scores for this round
+      const roundScores = await db.select().from(scores).where(eq(scores.roundId, round.id));
+
+      // Get round handicaps for this round
+      const roundHandicapRecords = await db
+        .select()
+        .from(roundHandicaps)
+        .where(eq(roundHandicaps.roundId, round.id));
+
+      const handicapMap = new Map(
+        roundHandicapRecords.map(rh => [rh.playerId, rh.courseHandicap])
+      );
+
+      // Recalculate and update each score
+      for (const score of roundScores) {
+        const hole = (roundWithHoles as any).holes?.find((h: any) => h.number === score.holeNumber);
+        if (!hole) continue;
+
+        // Use course handicap if set, otherwise fall back to base handicap
+        const handicapToUse = handicapMap.get(score.playerId) ?? (playerHandicapMap.get(score.playerId) || 0);
+
+        const { netScore, stablefordPoints } = this.calculatePoints(
+          score.grossScore,
+          hole.par,
+          hole.strokeIndex,
+          handicapToUse
+        );
+
+        // Update the score with recalculated values
+        await db
+          .update(scores)
+          .set({ netScore, stablefordPoints, handicapUsed: handicapToUse })
+          .where(eq(scores.id, score.id));
+
+        totalUpdated++;
+      }
+    }
+
+    return { success: true, updated: totalUpdated };
   }
 
   async submitScore(data: SubmitScoreRequest): Promise<Score> {
