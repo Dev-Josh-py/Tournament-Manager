@@ -25,13 +25,32 @@ export default function IndividualLeaderboard() {
   const { data: players } = usePlayers();
   const { data: rounds } = useRounds();
 
-  // Get scores for all rounds
-  const roundScoresQueries = rounds?.map(r => useScores(r.id)) || [];
-  const allScoresData = roundScoresQueries.map(q => q.data);
+  // Fetch scores for all rounds using fixed number of hooks
+  // We need to call hooks in a fixed order, so we call useScores for a fixed array of IDs
+  const scores1 = useScores(rounds?.[0]?.id || 0);
+  const scores2 = useScores(rounds?.[1]?.id || 0);
+  const scores3 = useScores(rounds?.[2]?.id || 0);
+  const scores4 = useScores(rounds?.[3]?.id || 0);
+  const scores5 = useScores(rounds?.[4]?.id || 0);
+  const scores6 = useScores(rounds?.[5]?.id || 0);
+
+  // Collect all score data
+  const allScoresData = [
+    scores1.data,
+    scores2.data,
+    scores3.data,
+    scores4.data,
+    scores5.data,
+    scores6.data,
+  ].slice(0, rounds?.length || 0);
 
   // Calculate individual standings
   const standings = useMemo(() => {
-    if (!players || !rounds || !allScoresData) return [];
+    if (!players || !rounds) return [];
+
+    // Check if all required data has loaded
+    const hasAllData = rounds.every((round, idx) => allScoresData[idx] !== undefined);
+    if (!hasAllData) return [];
 
     const playerScoresMap = new Map<number, PlayerScore>();
 
