@@ -89,6 +89,39 @@ export function useScores(roundId: number) {
   });
 }
 
+export function useAllRoundsScores(roundIds: number[]) {
+  return useQuery({
+    queryKey: ['all-rounds-scores', roundIds.join(',')],
+    queryFn: async () => {
+      // Fetch scores for all rounds in parallel
+      const scorePromises = roundIds
+        .filter(id => id > 0)
+        .map(roundId => {
+          const url = buildUrl(api.scores.list.path, { roundId });
+          return fetch(url, { headers: getAuthHeaders() })
+            .then(res => {
+              if (!res.ok) throw new Error(`Failed to fetch scores for round ${roundId}`);
+              return res.json();
+            })
+            .then(data => api.scores.list.responses[200].parse(data))
+            .then(scores => ({ roundId, scores }));
+        });
+
+      const results = await Promise.all(scorePromises);
+
+      // Create a map for easy lookup
+      const scoresMap = new Map<number, any[]>();
+      results.forEach(({ roundId, scores }) => {
+        scoresMap.set(roundId, scores);
+      });
+
+      // Return array aligned with input roundIds
+      return roundIds.map(id => scoresMap.get(id) || []);
+    },
+    enabled: roundIds.length > 0 && roundIds.some(id => id > 0),
+  });
+}
+
 export function useSubmitScore() {
   const queryClient = useQueryClient();
   return useMutation({

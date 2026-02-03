@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { usePlayers, useRounds, useScores } from "@/hooks/use-tournament";
+import { usePlayers, useRounds, useAllRoundsScores } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
@@ -25,31 +25,16 @@ export default function IndividualLeaderboard() {
   const { data: players } = usePlayers();
   const { data: rounds } = useRounds();
 
-  // Fetch scores for all rounds using fixed number of hooks
-  // We need to call hooks in a fixed order, so we call useScores for a fixed array of IDs
-  const scores1 = useScores(rounds?.[0]?.id || 0);
-  const scores2 = useScores(rounds?.[1]?.id || 0);
-  const scores3 = useScores(rounds?.[2]?.id || 0);
-  const scores4 = useScores(rounds?.[3]?.id || 0);
-  const scores5 = useScores(rounds?.[4]?.id || 0);
-  const scores6 = useScores(rounds?.[5]?.id || 0);
-
-  // Collect all score data
-  const allScoresData = [
-    scores1.data,
-    scores2.data,
-    scores3.data,
-    scores4.data,
-    scores5.data,
-    scores6.data,
-  ].slice(0, rounds?.length || 0);
+  // Fetch scores for all rounds in parallel
+  const roundIds = rounds?.map(r => r.id) || [];
+  const { data: allScoresData } = useAllRoundsScores(roundIds);
 
   // Calculate individual standings
   const standings = useMemo(() => {
-    if (!players || !rounds) return [];
+    if (!players || !rounds || !allScoresData) return [];
 
     // Check if all required data has loaded
-    const hasAllData = rounds.every((round, idx) => allScoresData[idx] !== undefined);
+    const hasAllData = allScoresData.length > 0 && allScoresData.length === rounds.length;
     if (!hasAllData) return [];
 
     const playerScoresMap = new Map<number, PlayerScore>();
@@ -111,7 +96,7 @@ export default function IndividualLeaderboard() {
       .map((p, idx) => ({ ...p, rank: idx + 1 }));
 
     return standings;
-  }, [players, rounds, allScoresData]);
+  }, [players, rounds, allScoresData, roundIds]);
 
   const getToParColor = (toPar: number) => {
     if (toPar <= -8) return "text-amber-500"; // Eagle+
