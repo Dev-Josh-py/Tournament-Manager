@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-body: 'Montserrat', sans-serif;
+  --font-display: 'Playfair Display', serif;
+
+  /* Golf Theme Palette - Fresh, Professional, Outdoor */
+  --background: 210 20% 98%;
+  --foreground: 220 20% 20%;
+  
+  /* Primary Green - lush fairway */
+  --primary: 142 60% 35%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary - Slate/Stone */
+  --secondary: 210 20% 90%;
+  --secondary-foreground: 220 20% 20%;
+  
+  /* Accent - Gold/Sand */
+  --accent: 35 80% 60%;
+  --accent-foreground: 220 20% 20%;
+  
+  --muted: 210 15% 94%;
+  --muted-foreground: 215 15% 45%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  
+  --border: 214 20% 90%;
+  --input: 214 20% 90%;
+  --ring: 142 60% 35%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 220 20% 20%;
+
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  
+  --primary: 142 50% 45%;
+  --primary-foreground: 0 0% 100%;
+  
+  --secondary: 217 19% 27%;
+  --secondary-foreground: 210 40% 98%;
+  
+  --accent: 35 70% 50%;
+  --accent-foreground: 210 40% 98%;
+  
+  --muted: 217 19% 27%;
+  --muted-foreground: 215 20% 65%;
+  
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 217 19% 27%;
+  --input: 217 19% 27%;
+  --ring: 142 50% 45%;
+  
+  --card: 222 47% 14%;
+  --card-foreground: 210 40% 98%;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight font-bold text-foreground;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/80 dark:bg-black/50 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Dark mode form inputs */
+  input, select, textarea {
+    @apply dark:bg-slate-800 dark:text-white dark:border-slate-700;
+  }
+
+  input::placeholder, textarea::placeholder {
+    @apply dark:text-slate-400;
+  }
+
+  /* Select trigger styling */
+  [role="combobox"] {
+    @apply dark:bg-slate-800 dark:text-white dark:border-slate-700;
+  }
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}

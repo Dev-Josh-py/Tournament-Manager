@@ -1,0 +1,49 @@
+So I want to create a new project, very specifically designed for an event we will be doing at the end of the month. I need you to help me plan this out. You        
+  are gonna start with detailed understanding of the golf tournment that we will be playing, the golf courses, the rounds, each round will have a different            
+  format, there will be individual and team rounds but all will reconcile to crown one two man team winner. I need you to get clarity on all the requirements this     
+   app will need, some of these include live scoring per round and overall tournmnent leaderboard. So far i have set up the schedule and which course will be          
+  played in which days. I have also decided the format for each round, there will be 3 two man teams and these teams have already been predetermined, winners if       
+  each round will be allocator points that will contribute to the team score and in the end the winning team is decided. Here is the schedule and formats let's        
+  get into plan mode and get started. As a base line it would be great to transfer some of the knowledge and lessons learnt from the project in the folder             
+  /GolfTracker. This app is not ready yet but has a working interface, note that although you can learn from GolfTracker we are trying to create a different app       
+  for a very specfic purpose here and should not be too heavily influenced by the other project, if you wish to use aspects of that project always prompt me as        
+  the user before implemementing these additions. TOURNAMENT SCHEDULE & FORMATS                                                                                        
+  Day    Course    Round    Format    Points                                                                                                                           
+  "Saturday                                                                                                                                                            
+  Feb 21"    Oubaai GC    Round 1    "Individual Net Stroke Play                                                                                                       
+  (6 players - no teams)"    "1st: 10pts                                                                                                                               
+  2nd: 8pts                                                                                                                                                            
+  3rd: 6pts                                                                                                                                                            
+  4th: 4pts                                                                                                                                                            
+  5th: 2pts                                                                                                                                                            
+  6th: 1pt"                                                                                                                                                            
+  "Sunday                                                                                                                                                              
+  Feb 22                                                                                                                                                               
+  (AM)"    Fancourt Outeniqua    Round 2    "Better Ball Stroke Play                                                                                                   
+  (3 teams - best net score per hole)"    "1st: 12pts                                                                                                                  
+  2nd: 6pts                                                                                                                                                            
+  3rd: 3pts"                                                                                                                                                           
+  "Sunday                                                                                                                                                              
+  Feb 22                                                                                                                                                               
+  (PM)"    Fancourt Links    Round 3    "Combined Stableford                                                                                                           
+  (3 teams - add both teammates' points per hole)"    "1st: 12pts                                                                                                      
+  2nd: 6pts                                                                                                                                                            
+  3rd: 3pts"                                                                                                                                                           
+  "Monday                                                                                                                                                              
+  Feb 23                                                                                                                                                               
+  (AM)"    George GC    Round 4    "Best/Worst Ball Stableford                                                                                                         
+  Even holes: BEST score | Odd holes: WORST score"    "1st: 15pts                                                                                                      
+  2nd: 8pts                                                                                                                                                            
+  3rd: 4pts"                                                                                                                                                           
+  "Monday                                                                                                                                                              
+  Feb 23                                                                                                                                                               
+  (PM)"    Fancourt Montagu    Round 5    "Pick 9 Better Ball Stableford                                                                                               
+  Pick 9 holes per player BEFORE teeing off"    "1st: 15pts                                                                                                            
+  2nd: 8pts                                                                                                                                                            
+  3rd: 4pts"                                                                                                                                                           
+  "Tuesday                                                                                                                                                             
+  Feb 24"    Kingswood Golf Estate    "Round 6                                                                                                                         
+  (Final)"    "Better Ball Stableford - Championship Round                                                                                                             
+  Best Stableford score per hole"    "1st: 18pts                                                                                                                       
+  2nd: 10pts                                                                                                                                                           
+  3rd: 5pts"                                                               
