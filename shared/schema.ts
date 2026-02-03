@@ -1,63 +1,63 @@
 
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, boolean, serial } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // === TABLE DEFINITIONS ===
 
-export const teams = sqliteTable("teams", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const teams = pgTable("teams", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   color: text("color").notNull(), // Hex code for UI
   totalPoints: integer("total_points").default(0),
 });
 
-export const players = sqliteTable("players", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const players = pgTable("players", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   handicap: integer("handicap").default(0),
   teamId: integer("team_id").references(() => teams.id),
 });
 
-export const courses = sqliteTable("courses", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const courses = pgTable("courses", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
 });
 
-export const holes = sqliteTable("holes", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const holes = pgTable("holes", {
+  id: serial("id").primaryKey(),
   courseId: integer("course_id").references(() => courses.id),
   number: integer("number").notNull(), // 1-18
   par: integer("par").notNull(),
   strokeIndex: integer("stroke_index").notNull(),
 });
 
-export const rounds = sqliteTable("rounds", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const rounds = pgTable("rounds", {
+  id: serial("id").primaryKey(),
   courseId: integer("course_id").references(() => courses.id),
   roundNumber: integer("round_number").notNull(),
   date: text("date").notNull(), // Storing as string for display (e.g., "Saturday Feb 21")
   formatType: text("format_type").notNull(), // 'individual_net', 'better_ball', 'combined_stableford', 'best_worst', 'pick_9', 'championship'
   description: text("description").notNull(),
-  isCompleted: integer("is_completed", { mode: "boolean" }).default(false),
+  isCompleted: boolean("is_completed").default(false),
 });
 
-export const scores = sqliteTable("scores", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const scores = pgTable("scores", {
+  id: serial("id").primaryKey(),
   roundId: integer("round_id").references(() => rounds.id),
   playerId: integer("player_id").references(() => players.id),
   holeNumber: integer("hole_number").notNull(),
   grossScore: integer("gross_score").notNull(), // Raw strokes
   netScore: integer("net_score"), // Calculated based on handicap
   stablefordPoints: integer("stableford_points"), // Calculated based on format
-  isPick9: integer("is_pick_9", { mode: "boolean" }).default(false), // For Round 5
+  isPick9: boolean("is_pick_9").default(false), // For Round 5
   handicapUsed: integer("handicap_used"), // Audit trail - handicap used for this score
 });
 
 // To store the final point allocation for the tournament leaderboard
-export const roundTeamPoints = sqliteTable("round_team_points", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const roundTeamPoints = pgTable("round_team_points", {
+  id: serial("id").primaryKey(),
   roundId: integer("round_id").references(() => rounds.id),
   teamId: integer("team_id").references(() => teams.id),
   points: integer("points").notNull(), // The 10, 8, 6 etc. allocated points
@@ -65,8 +65,8 @@ export const roundTeamPoints = sqliteTable("round_team_points", {
 });
 
 // To store round-specific course handicaps for each player
-export const roundHandicaps = sqliteTable("round_handicaps", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const roundHandicaps = pgTable("round_handicaps", {
+  id: serial("id").primaryKey(),
   roundId: integer("round_id").references(() => rounds.id).notNull(),
   playerId: integer("player_id").references(() => players.id).notNull(),
   courseHandicap: integer("course_handicap").notNull(),
