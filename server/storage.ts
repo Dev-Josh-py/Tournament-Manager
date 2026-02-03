@@ -5,7 +5,7 @@ import {
   type Team, type Player, type Round, type Course, type Hole, type Score, type SubmitScoreRequest,
   type RoundLeaderboardEntry, type LeaderboardEntry, type RoundWithCourse
 } from "@shared/schema";
-import { eq, and, asc, desc, sum, sql } from "drizzle-orm";
+import { eq, and, asc, desc, sum, sql, inArray } from "drizzle-orm";
 
 export type RoundHandicapDisplay = {
   playerId: number;
@@ -167,7 +167,70 @@ export class DatabaseStorage implements IStorage {
       updated++;
     }
 
+    // Recalculate all scores for affected players in this round
+    await this.recalculateRoundScores(roundId, handicaps.map(h => h.playerId));
+
     return { success: true, updated };
+  }
+
+  private async recalculateRoundScores(roundId: number, playerIds: number[]): Promise<void> {
+    // Get the round with holes
+    const round = await this.getRound(roundId);
+    if (!round) return;
+
+    // Get all scores for these players in this round
+    const roundScores = await db
+      .select()
+      .from(scores)
+      .where(
+        and(
+          eq(scores.roundId, roundId),
+          inArray(scores.playerId, playerIds)
+        )
+      );
+
+    // Get round handicaps for these players
+    const roundHandicapRecords = await db
+      .select()
+      .from(roundHandicaps)
+      .where(
+        and(
+          eq(roundHandicaps.roundId, roundId),
+          inArray(roundHandicaps.playerId, playerIds)
+        )
+      );
+
+    const handicapMap = new Map(
+      roundHandicapRecords.map(rh => [rh.playerId, rh.courseHandicap])
+    );
+
+    // Get base handicaps as fallback
+    const playerRecords = await db.select().from(players);
+    const playerHandicapMap = new Map(
+      playerRecords.map(p => [p.id, p.handicap])
+    );
+
+    // Recalculate and update each score
+    for (const score of roundScores) {
+      const hole = (round as any).holes?.find((h: any) => h.number === score.holeNumber);
+      if (!hole) continue;
+
+      // Use course handicap if set, otherwise fall back to base handicap
+      const handicapToUse = handicapMap.get(score.playerId) ?? (playerHandicapMap.get(score.playerId) || 0);
+
+      const { netScore, stablefordPoints } = this.calculatePoints(
+        score.grossScore,
+        hole.par,
+        hole.strokeIndex,
+        handicapToUse
+      );
+
+      // Update the score with recalculated values
+      await db
+        .update(scores)
+        .set({ netScore, stablefordPoints, handicapUsed: handicapToUse })
+        .where(eq(scores.id, score.id));
+    }
   }
 
   async submitScore(data: SubmitScoreRequest): Promise<Score> {
