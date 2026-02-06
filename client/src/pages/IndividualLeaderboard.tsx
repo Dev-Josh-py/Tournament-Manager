@@ -123,29 +123,48 @@ export default function IndividualLeaderboard() {
     return null;
   };
 
+  const expandedPlayer = standings.find(p => p.playerId === expandedPlayerId);
+
   // Determine which round to display for a player
-  const getDisplayRound = (player: PlayerScore) => {
-    if (!rounds) return null;
+  const getDisplayRound = () => {
+    if (!rounds || !expandedPlayer || !allScoresData) return null;
 
-    // Find first incomplete round (score = 0)
-    const incompleteRoundIndex = player.netScoresByRound.findIndex(score => score === 0);
+    // Check each round to find incomplete one (1-17 holes filled)
+    for (let i = 0; i < rounds.length; i++) {
+      const roundScores = allScoresData[i] || [];
+      const playerScoresInRound = roundScores.filter(s => s.playerId === expandedPlayer.playerId);
+      const holesFilledCount = playerScoresInRound.length;
 
-    if (incompleteRoundIndex !== -1 && incompleteRoundIndex < rounds.length) {
-      return { round: rounds[incompleteRoundIndex], isIncomplete: true };
+      // Incomplete round: has some holes (1-17) but not all 18
+      if (holesFilledCount > 0 && holesFilledCount < 18) {
+        return { round: rounds[i], isIncomplete: true };
+      }
     }
 
-    // All rounds complete - return last round
-    if (rounds.length > 0) {
-      return { round: rounds[rounds.length - 1], isIncomplete: false };
+    // No incomplete rounds found - return last round with all 18 holes
+    for (let i = rounds.length - 1; i >= 0; i--) {
+      const roundScores = allScoresData[i] || [];
+      const playerScoresInRound = roundScores.filter(s => s.playerId === expandedPlayer.playerId);
+      if (playerScoresInRound.length === 18) {
+        return { round: rounds[i], isIncomplete: false };
+      }
+    }
+
+    // Fallback: return last round with any scores
+    for (let i = rounds.length - 1; i >= 0; i--) {
+      const roundScores = allScoresData[i] || [];
+      const playerScoresInRound = roundScores.filter(s => s.playerId === expandedPlayer.playerId);
+      if (playerScoresInRound.length > 0) {
+        return { round: rounds[i], isIncomplete: true };
+      }
     }
 
     return null;
   };
 
-  const expandedPlayer = standings.find(p => p.playerId === expandedPlayerId);
-  const displayRoundInfo = expandedPlayer ? getDisplayRound(expandedPlayer) : null;
+  const displayRoundInfo = getDisplayRound();
 
-  // Fetch scores for expanded player's round
+  // Fetch scores for expanded player's round (the specific round being displayed)
   const { data: expandedRoundScores, isLoading: scoresLoading } = useScores(
     displayRoundInfo?.round?.id ?? 0,
     { enabled: !!displayRoundInfo }
