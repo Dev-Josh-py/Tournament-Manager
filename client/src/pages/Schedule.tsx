@@ -19,7 +19,8 @@ function HandicapStatusIndicator({ roundId }: { roundId: number }) {
     handicaps &&
     players &&
     handicaps.length === players.length &&
-    handicaps.length > 0;
+    handicaps.length > 0 &&
+    handicaps.every(h => h.courseHandicap !== null && h.courseHandicap !== undefined);
 
   return (
     <div className="flex items-center gap-1">
