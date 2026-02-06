@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useRounds, useRoundHandicaps } from "@/hooks/use-tournament";
+import { useRounds, useRoundHandicaps, usePlayers } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
@@ -12,12 +12,18 @@ import { clsx } from "clsx";
 
 function HandicapStatusIndicator({ roundId }: { roundId: number }) {
   const { data: handicaps } = useRoundHandicaps(roundId);
+  const { data: players } = usePlayers();
 
-  const hasHandicaps = handicaps && handicaps.length > 0;
+  // Check if all players have been assigned a course handicap for this round
+  const allPlayersHaveHandicaps =
+    handicaps &&
+    players &&
+    handicaps.length === players.length &&
+    handicaps.length > 0;
 
   return (
     <div className="flex items-center gap-1">
-      {hasHandicaps ? (
+      {allPlayersHaveHandicaps ? (
         <>
           <CheckCircle2 className="w-4 h-4 text-green-600" />
           <span className="text-xs text-green-600 font-medium">HCP Set</span>
