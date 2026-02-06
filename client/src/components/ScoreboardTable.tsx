@@ -139,7 +139,24 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                 </td>}
               </tr>
 
-              {/* Stableford Points row */}
+              {/* Net row - hidden in compact mode */}
+              {!compact && (
+              <tr className="border-t border-slate-200 dark:border-slate-700">
+                <td className="px-2 py-2 font-semibold text-slate-700 dark:text-slate-300">Net</td>
+                {holeNumbers.map(h => {
+                  const score = getScore(h);
+                  const netScore = score?.netScore;
+                  return (
+                    <td key={h} className="px-1.5 py-2 text-center text-slate-900 dark:text-slate-100">
+                      {netScore !== null && netScore !== undefined ? netScore : '-'}
+                    </td>
+                  );
+                })}
+                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{netOut}</td>
+              </tr>
+              )}
+
+              {/* Stableford Points row - shown in larger scorecards and compact leaderboard */}
               <tr className="border-t border-slate-200 dark:border-slate-700">
                 <td className="px-2 py-2 font-semibold text-slate-700 dark:text-slate-300">Pts</td>
                 {holeNumbers.map(h => {
@@ -151,7 +168,6 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                     </td>
                   );
                 })}
-                {!compact && <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{netOut}</td>}
               </tr>
             </tbody>
           </table>
@@ -163,6 +179,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
   // Calculate totals
   const totalPar = calculateSum([...front9, ...back9], 'par');
   const totalScore = calculateSum([...front9, ...back9], 'grossScore');
+  const totalNet = calculateSum([...front9, ...back9], 'netScore');
 
   // Calculate total stableford points
   const allHoles = [...front9, ...back9];
@@ -185,7 +202,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
       {/* Summary Stats - hidden in compact mode */}
       {!compact && (
       <div className="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="text-center">
             <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Par</div>
             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalPar}</div>
@@ -193,6 +210,10 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
           <div className="text-center">
             <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Score</div>
             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalScore}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Net</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalNet}</div>
           </div>
           <div className="text-center">
             <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Points</div>
