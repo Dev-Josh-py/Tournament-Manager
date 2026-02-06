@@ -70,25 +70,29 @@ export default function IndividualLeaderboard() {
       const roundScores = allScoresData[roundIndex];
       if (!roundScores) return;
 
-      // Par for standard 18-hole course is 72
-      const roundPar = 72;
-
-      // Group scores by player
-      const playerRoundScores = new Map<number, number[]>();
+      // Group scores by player and calculate par based on actual holes played
+      const playerRoundScores = new Map<number, { netScores: number[], par: number }>();
       roundScores.forEach(score => {
         if (!playerRoundScores.has(score.playerId)) {
-          playerRoundScores.set(score.playerId, []);
+          playerRoundScores.set(score.playerId, { netScores: [], par: 0 });
         }
-        playerRoundScores.get(score.playerId)!.push(score.netScore || 0);
+        const playerData = playerRoundScores.get(score.playerId)!;
+        playerData.netScores.push(score.netScore || 0);
+
+        // Calculate par for this hole based on actual hole data
+        const hole = round.holes?.find(h => h.number === score.holeNumber);
+        if (hole) {
+          playerData.par += hole.par;
+        }
       });
 
       // Update player totals
-      playerRoundScores.forEach((netScores, playerId) => {
+      playerRoundScores.forEach((data, playerId) => {
         const player = playerScoresMap.get(playerId);
         if (player) {
-          const roundNetTotal = netScores.reduce((a, b) => a + b, 0);
+          const roundNetTotal = data.netScores.reduce((a, b) => a + b, 0);
           player.totalNetScore += roundNetTotal;
-          player.totalPar += roundPar;
+          player.totalPar += data.par;
           player.netScoresByRound.push(roundNetTotal);
           player.roundCount += 1;
         }
