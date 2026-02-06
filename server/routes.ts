@@ -110,6 +110,42 @@ export async function registerRoutes(
     }
   });
 
+  // Groupings
+  app.get(api.groupings.list.path, async (req, res) => {
+    try {
+      const roundId = Number(req.params.roundId);
+      const groupings = await storage.getGroupingsForRound(roundId);
+      res.json(groupings);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  app.post(api.groupings.upsert.path, async (req, res) => {
+    try {
+      const roundId = Number(req.params.roundId);
+      const input = api.groupings.upsert.input.parse(req.body);
+      const result = await storage.upsertGroupings(roundId, input);
+      res.json(result);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: err.errors[0].message });
+      } else {
+        res.status(500).json({ error: (err as Error).message });
+      }
+    }
+  });
+
+  app.delete(api.groupings.delete.path, async (req, res) => {
+    try {
+      const roundId = Number(req.params.roundId);
+      const result = await storage.deleteGroupings(roundId);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
   // Update player handicap index
   app.put('/api/players/:id/handicap', async (req, res) => {
     try {

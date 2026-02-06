@@ -72,6 +72,21 @@ export const roundHandicaps = pgTable("round_handicaps", {
   courseHandicap: integer("course_handicap").notNull(),
 });
 
+// To store player groupings for rounds (group scoring mode)
+export const roundGroupings = pgTable("round_groupings", {
+  id: serial("id").primaryKey(),
+  roundId: integer("round_id").references(() => rounds.id).notNull(),
+  groupNumber: integer("group_number").notNull(),
+  groupName: text("group_name"), // Optional custom name (e.g., "Morning Group")
+});
+
+// To store which players are in which grouping
+export const roundGroupingPlayers = pgTable("round_grouping_players", {
+  id: serial("id").primaryKey(),
+  groupingId: integer("grouping_id").references(() => roundGroupings.id).notNull(),
+  playerId: integer("player_id").references(() => players.id).notNull(),
+});
+
 // === RELATIONS ===
 export const teamsRelations = relations(teams, ({ many }) => ({
   players: many(players),
@@ -106,6 +121,25 @@ export const roundHandicapsRelations = relations(roundHandicaps, ({ one }) => ({
   }),
   player: one(players, {
     fields: [roundHandicaps.playerId],
+    references: [players.id],
+  }),
+}));
+
+export const roundGroupingsRelations = relations(roundGroupings, ({ one, many }) => ({
+  round: one(rounds, {
+    fields: [roundGroupings.roundId],
+    references: [rounds.id],
+  }),
+  players: many(roundGroupingPlayers),
+}));
+
+export const roundGroupingPlayersRelations = relations(roundGroupingPlayers, ({ one }) => ({
+  grouping: one(roundGroupings, {
+    fields: [roundGroupingPlayers.groupingId],
+    references: [roundGroupings.id],
+  }),
+  player: one(players, {
+    fields: [roundGroupingPlayers.playerId],
     references: [players.id],
   }),
 }));
@@ -155,4 +189,12 @@ export type RoundLeaderboardEntry = {
   points: number; // Allocated points (e.g., 10, 8, 6)
   scoreMetric: number; // The raw metric used to rank (Net score, total stableford, etc.)
   rank: number;
+};
+
+// Grouping Types
+export type RoundGrouping = typeof roundGroupings.$inferSelect;
+export type RoundGroupingPlayer = typeof roundGroupingPlayers.$inferSelect;
+
+export type RoundGroupingWithPlayers = RoundGrouping & {
+  players: (RoundGroupingPlayer & { player: Player })[];
 };

@@ -6,7 +6,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Info, Settings, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar, MapPin, Info, Settings, Users, CheckCircle2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { clsx } from "clsx";
 
@@ -105,12 +105,20 @@ export default function Schedule() {
                     </div>
                   </div>
 
-                  <Link href={`/round-setup?round=${round.id}`} className="block mt-4">
-                    <Button variant="outline" size="sm" className="w-full">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Set Course Handicaps
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2 mt-4">
+                    <Link href={`/round-setup?round=${round.id}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Set Course Handicaps
+                      </Button>
+                    </Link>
+                    <Link href={`/grouping-setup?round=${round.id}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Users className="w-4 h-4 mr-2" />
+                        Configure Groupings
+                      </Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             ))

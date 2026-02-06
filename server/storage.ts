@@ -2,8 +2,10 @@
 import { db } from "./db";
 import {
   teams, players, rounds, courses, holes, scores, roundTeamPoints, roundHandicaps,
+  roundGroupings, roundGroupingPlayers,
   type Team, type Player, type Round, type Course, type Hole, type Score, type SubmitScoreRequest,
-  type RoundLeaderboardEntry, type LeaderboardEntry, type RoundWithCourse
+  type RoundLeaderboardEntry, type LeaderboardEntry, type RoundWithCourse,
+  type RoundGrouping, type RoundGroupingPlayer, type RoundGroupingWithPlayers
 } from "@shared/schema";
 import { eq, and, asc, desc, sum, sql, inArray } from "drizzle-orm";
 
@@ -45,6 +47,11 @@ export interface IStorage {
 
   // Player Handicap
   updatePlayerHandicap(playerId: number, handicap: number): Promise<Player>;
+
+  // Groupings
+  getGroupingsForRound(roundId: number): Promise<RoundGroupingWithPlayers[]>;
+  upsertGroupings(roundId: number, groupings: Array<{ groupNumber: number; groupName?: string; playerIds: number[] }>): Promise<{ success: boolean }>;
+  deleteGroupings(roundId: number): Promise<{ success: boolean }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -657,6 +664,115 @@ export class DatabaseStorage implements IStorage {
       scoreMetric: res.totalPoints,
       rank: idx + 1
     }));
+  }
+
+  // === GROUPINGS ===
+
+  async getGroupingsForRound(roundId: number): Promise<RoundGroupingWithPlayers[]> {
+    const groupings = await db.query.roundGroupings.findMany({
+      where: eq(roundGroupings.roundId, roundId),
+      with: {
+        players: {
+          with: { player: true }
+        }
+      },
+      orderBy: asc(roundGroupings.groupNumber)
+    });
+    return groupings as RoundGroupingWithPlayers[];
+  }
+
+  async upsertGroupings(
+    roundId: number,
+    groupings: Array<{ groupNumber: number; groupName?: string; playerIds: number[] }>
+  ): Promise<{ success: boolean }> {
+    // Validate all playerIds are valid
+    const allPlayerIds = groupings.flatMap(g => g.playerIds);
+    const uniquePlayerIds = [...new Set(allPlayerIds)];
+
+    // Check for duplicate players in different groups
+    if (uniquePlayerIds.length !== allPlayerIds.length) {
+      throw new Error("Player cannot be in multiple groupings for the same round");
+    }
+
+    // Verify all players exist
+    const validPlayers = await db.select({ id: players.id }).from(players).where(
+      inArray(players.id, uniquePlayerIds)
+    );
+
+    if (validPlayers.length !== uniquePlayerIds.length) {
+      throw new Error("One or more players do not exist");
+    }
+
+    // Verify groupNumbers are sequential starting from 1
+    const groupNumbers = groupings.map(g => g.groupNumber).sort((a, b) => a - b);
+    for (let i = 0; i < groupNumbers.length; i++) {
+      if (groupNumbers[i] !== i + 1) {
+        throw new Error("Group numbers must be sequential starting from 1");
+      }
+    }
+
+    // Delete existing groupings for this round
+    const existingGroupings = await db.select({ id: roundGroupings.id })
+      .from(roundGroupings)
+      .where(eq(roundGroupings.roundId, roundId));
+
+    if (existingGroupings.length > 0) {
+      await db.delete(roundGroupingPlayers)
+        .where(
+          inArray(
+            roundGroupingPlayers.groupingId,
+            existingGroupings.map(g => g.id)
+          )
+        );
+
+      await db.delete(roundGroupings)
+        .where(eq(roundGroupings.roundId, roundId));
+    }
+
+    // Insert new groupings
+    for (const grouping of groupings) {
+      const [newGrouping] = await db.insert(roundGroupings).values({
+        roundId,
+        groupNumber: grouping.groupNumber,
+        groupName: grouping.groupName || null,
+      }).returning();
+
+      // Insert players for this grouping
+      if (grouping.playerIds.length > 0) {
+        await db.insert(roundGroupingPlayers).values(
+          grouping.playerIds.map(playerId => ({
+            groupingId: newGrouping.id,
+            playerId,
+          }))
+        );
+      }
+    }
+
+    return { success: true };
+  }
+
+  async deleteGroupings(roundId: number): Promise<{ success: boolean }> {
+    // Get all groupings for this round
+    const groupingsToDelete = await db.select({ id: roundGroupings.id })
+      .from(roundGroupings)
+      .where(eq(roundGroupings.roundId, roundId));
+
+    if (groupingsToDelete.length > 0) {
+      // Delete all players in these groupings
+      await db.delete(roundGroupingPlayers)
+        .where(
+          inArray(
+            roundGroupingPlayers.groupingId,
+            groupingsToDelete.map(g => g.id)
+          )
+        );
+
+      // Delete the groupings
+      await db.delete(roundGroupings)
+        .where(eq(roundGroupings.roundId, roundId));
+    }
+
+    return { success: true };
   }
 }
 

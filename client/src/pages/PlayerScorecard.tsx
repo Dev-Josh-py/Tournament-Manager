@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
-import { usePlayers, useRounds, useScores, useUpdatePlayerHandicap, useRoundHandicaps } from "@/hooks/use-tournament";
+import { usePlayers, useRounds, useScores, useUpdatePlayerHandicap, useRoundHandicaps, useSubmitScore } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2, Edit2, X, Check } from "lucide-react";
 import { clsx } from "clsx";
 
 export default function PlayerScorecard() {
@@ -307,9 +308,15 @@ function RoundDetailCard({
   playerId: number
   playerHandicap: number
 }) {
-  const { data: allScores } = useScores(roundId);
+  const { data: allScores, refetch } = useScores(roundId);
   const { data: rounds } = useRounds();
   const { data: handicaps } = useRoundHandicaps(roundId);
+  const submitScore = useSubmitScore();
+  const { toast } = useToast();
+
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingHole, setEditingHole] = useState<number | null>(null);
+  const [editingScore, setEditingScore] = useState<string>("");
 
   const round = rounds?.find(r => r.id === roundId);
   const playerScores = allScores?.filter(s => s.playerId === playerId) || [];
@@ -327,17 +334,152 @@ function RoundDetailCard({
     );
   }
 
+  const handleStartEditScore = (holeNumber: number, currentScore: number) => {
+    setEditingHole(holeNumber);
+    setEditingScore(String(currentScore));
+  };
+
+  const handleSaveScore = async () => {
+    if (editingHole === null) return;
+
+    const score = parseInt(editingScore);
+    if (isNaN(score) || score < 1 || score > 15) {
+      toast({
+        title: "Invalid Score",
+        description: "Score must be between 1 and 15",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await submitScore.mutateAsync({
+        roundId,
+        playerId,
+        holeNumber: editingHole,
+        grossScore: score,
+        isPick9: false
+      });
+
+      toast({
+        title: "Score Saved",
+        description: `Hole ${editingHole} score updated`,
+        variant: "default",
+      });
+
+      // Refetch scores
+      refetch();
+      setEditingHole(null);
+      setEditingScore("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save score",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card className="border-0 shadow-lg">
         <CardContent className="p-6">
-          <h3 className="font-bold text-xl mb-4">{round.course.name}</h3>
-          <ScoreboardTable
-            playerScores={playerScores}
-            holes={round.holes || []}
-            roundFormat={round.formatType}
-            courseHandicap={playerHandicapData?.courseHandicap}
-          />
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-xl">{round.course.name}</h3>
+            {!isEditMode && playerScores.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsEditMode(true)}
+              >
+                <Edit2 className="w-4 h-4 mr-2" />
+                Edit Scores
+              </Button>
+            )}
+            {isEditMode && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setIsEditMode(false);
+                  setEditingHole(null);
+                  setEditingScore("");
+                }}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Exit Edit
+              </Button>
+            )}
+          </div>
+
+          {isEditMode ? (
+            <div className="space-y-3">
+              {(round.holes || []).map(hole => {
+                const existingScore = playerScores.find(s => s.holeNumber === hole.number);
+                const isEditing = editingHole === hole.number;
+
+                return (
+                  <div
+                    key={hole.number}
+                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="font-bold w-8">H{hole.number}</div>
+                      <div className="text-sm text-slate-600">Par {hole.par} (SI {hole.strokeIndex})</div>
+                    </div>
+
+                    {isEditing ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="1"
+                          max="15"
+                          value={editingScore}
+                          onChange={(e) => setEditingScore(e.target.value)}
+                          className="w-16 text-center"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          onClick={handleSaveScore}
+                          disabled={submitScore.isPending}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {submitScore.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Check className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="text-lg font-bold text-primary">
+                          {existingScore?.grossScore || "-"}
+                        </div>
+                        {existingScore && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleStartEditScore(hole.number, existingScore.grossScore)}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <ScoreboardTable
+              playerScores={playerScores}
+              holes={round.holes || []}
+              roundFormat={round.formatType}
+              courseHandicap={playerHandicapData?.courseHandicap}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

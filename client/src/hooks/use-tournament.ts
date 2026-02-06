@@ -276,3 +276,77 @@ export function useUpdatePlayerHandicap() {
     },
   });
 }
+
+// ============================================
+// Groupings
+// ============================================
+
+export function useRoundGroupings(roundId: number) {
+  return useQuery({
+    queryKey: [api.groupings.list.path, roundId],
+    queryFn: async () => {
+      const url = buildUrl(api.groupings.list.path, { roundId });
+      const res = await fetch(url, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error("Failed to fetch groupings");
+      return api.groupings.list.responses[200].parse(await res.json());
+    },
+    enabled: !!roundId && roundId > 0,
+  });
+}
+
+export function useUpsertGroupings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      roundId,
+      groupings
+    }: {
+      roundId: number;
+      groupings: Array<{
+        groupNumber: number;
+        groupName?: string;
+        playerIds: number[];
+      }>;
+    }) => {
+      const url = buildUrl(api.groupings.upsert.path, { roundId });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(groupings),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to save groupings");
+      }
+      return api.groupings.upsert.responses[200].parse(await res.json());
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [api.groupings.list.path, variables.roundId]
+      });
+    },
+  });
+}
+
+export function useDeleteGroupings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (roundId: number) => {
+      const url = buildUrl(api.groupings.delete.path, { roundId });
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to delete groupings");
+      return api.groupings.delete.responses[200].parse(await res.json());
+    },
+    onSuccess: (_, roundId) => {
+      queryClient.invalidateQueries({
+        queryKey: [api.groupings.list.path, roundId]
+      });
+    },
+  });
+}

@@ -1,14 +1,15 @@
 
 import { z } from 'zod';
-import { 
-  insertScoreSchema, 
-  teams, 
-  players, 
-  rounds, 
-  courses, 
-  holes, 
+import {
+  insertScoreSchema,
+  teams,
+  players,
+  rounds,
+  courses,
+  holes,
   scores,
-  roundTeamPoints
+  roundTeamPoints,
+  type RoundGroupingWithPlayers
 } from './schema';
 
 export const errorSchemas = {
@@ -109,6 +110,35 @@ export const api = {
           scoreMetric: z.number(), // The raw score used for ranking
           rank: z.number(),
         })),
+      },
+    },
+  },
+  groupings: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/rounds/:roundId/groupings',
+      responses: {
+        200: z.array(z.custom<RoundGroupingWithPlayers>()),
+      },
+    },
+    upsert: {
+      method: 'POST' as const,
+      path: '/api/rounds/:roundId/groupings',
+      input: z.array(z.object({
+        groupNumber: z.number(),
+        groupName: z.string().optional(),
+        playerIds: z.array(z.number()),
+      })),
+      responses: {
+        200: z.object({ success: z.boolean() }),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/rounds/:roundId/groupings',
+      responses: {
+        200: z.object({ success: z.boolean() }),
       },
     },
   }
