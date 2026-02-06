@@ -74,7 +74,7 @@ export function useRound(id: number) {
 // Scoring
 // ============================================
 
-export function useScores(roundId: number) {
+export function useScores(roundId: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [api.scores.list.path, roundId],
     queryFn: async () => {
@@ -85,7 +85,7 @@ export function useScores(roundId: number) {
       if (!res.ok) throw new Error("Failed to fetch scores");
       return api.scores.list.responses[200].parse(await res.json());
     },
-    enabled: !!roundId,
+    enabled: options?.enabled !== false && !!roundId,
   });
 }
 
