@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { useRounds, useRound, usePlayers, useSubmitScore, useScores, useRoundHandicaps } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
@@ -30,12 +30,22 @@ export default function Scoring() {
   const { toast } = useToast();
 
   const currentHoleData = roundDetails?.holes.find(h => h.number === currentHole);
-  
+
   // Check if score already exists for this hole/player
-  const existingScore = existingScores?.find(s => 
-    s.playerId === Number(selectedPlayerId) && 
+  const existingScore = existingScores?.find(s =>
+    s.playerId === Number(selectedPlayerId) &&
     s.holeNumber === currentHole
   );
+
+  // Calculate which holes have been scored
+  const scoredHoles = useMemo(() => {
+    if (!existingScores || !selectedPlayerId) return new Set<number>();
+    return new Set(
+      existingScores
+        .filter(s => s.playerId === Number(selectedPlayerId))
+        .map(s => s.holeNumber)
+    );
+  }, [existingScores, selectedPlayerId]);
 
   const handleScoreSubmit = async () => {
     if (!selectedRoundId || !selectedPlayerId) return;
@@ -80,6 +90,34 @@ export default function Scoring() {
     if (diff === 0) return "text-slate-900"; // Par
     if (diff === 1) return "text-blue-600"; // Bogey
     return "text-slate-500"; // Double+
+  };
+
+  // Hole button component for quick navigation
+  const HoleButton = ({
+    holeNumber,
+    isActive,
+    isScored
+  }: {
+    holeNumber: number;
+    isActive: boolean;
+    isScored: boolean;
+  }) => {
+    return (
+      <button
+        onClick={() => setCurrentHole(holeNumber)}
+        aria-label={`Hole ${holeNumber}${isScored ? " (scored)" : ""}`}
+        aria-current={isActive ? "true" : undefined}
+        className={clsx(
+          "w-10 h-10 rounded-lg font-semibold text-sm transition-all",
+          "hover:scale-105 active:scale-95",
+          isActive && "bg-primary text-white ring-2 ring-primary ring-offset-2",
+          !isActive && isScored && "bg-green-100 text-green-800 border-2 border-green-500 dark:bg-green-900 dark:text-green-100 dark:border-green-600",
+          !isActive && !isScored && "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+        )}
+      >
+        {holeNumber}
+      </button>
+    );
   };
 
   return (
@@ -188,15 +226,15 @@ export default function Scoring() {
               
               {/* Hole Navigator */}
               <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-slate-100">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
                   onClick={() => setCurrentHole(Math.max(1, currentHole - 1))}
                   disabled={currentHole === 1}
                 >
                   <ChevronLeft className="w-6 h-6 text-slate-400" />
                 </Button>
-                
+
                 <div className="text-center">
                   <h2 className="text-2xl font-bold font-display text-primary">Hole {currentHole}</h2>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
@@ -206,8 +244,8 @@ export default function Scoring() {
                   </div>
                 </div>
 
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
                   onClick={() => setCurrentHole(Math.min(18, currentHole + 1))}
                   disabled={currentHole === 18}
@@ -215,6 +253,39 @@ export default function Scoring() {
                   <ChevronRight className="w-6 h-6 text-slate-400" />
                 </Button>
               </div>
+
+              {/* Hole Selector Grid */}
+              <Card className="border-none shadow-sm bg-white">
+                <CardContent className="p-3">
+                  <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
+                    Quick Jump to Hole
+                  </div>
+
+                  {/* Front 9 */}
+                  <div className="grid grid-cols-9 gap-1.5 mb-1.5">
+                    {Array.from({ length: 9 }, (_, i) => i + 1).map(hole => (
+                      <HoleButton
+                        key={hole}
+                        holeNumber={hole}
+                        isActive={currentHole === hole}
+                        isScored={scoredHoles.has(hole)}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Back 9 */}
+                  <div className="grid grid-cols-9 gap-1.5">
+                    {Array.from({ length: 9 }, (_, i) => i + 10).map(hole => (
+                      <HoleButton
+                        key={hole}
+                        holeNumber={hole}
+                        isActive={currentHole === hole}
+                        isScored={scoredHoles.has(hole)}
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Big Score Input */}
               <Card className="border-none shadow-lg bg-white overflow-hidden relative">
