@@ -4,6 +4,7 @@ import { usePlayers, useRounds, useScores, useUpdatePlayerHandicap } from "@/hoo
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
+import { ScoreboardTable } from "@/components/ScoreboardTable";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -271,22 +272,6 @@ function RoundSummaryCard({
     );
   }
 
-  // Calculate totals
-  const grossTotal = playerScores.reduce((sum, s) => sum + (s.grossScore || 0), 0);
-  const netTotal = playerScores.reduce((sum, s) => sum + (s.netScore || 0), 0);
-  const totalHandicap = playerScores.reduce((sum, s) => sum + (s.handicapStrokes || 0), 0);
-  const stablefordTotal = playerScores.reduce((sum, s) => sum + (s.stablefordPoints || 0), 0);
-
-  // Determine score quality color
-  const getScoreColor = (gross: number, par: number) => {
-    const diff = gross - par;
-    if (diff <= -2) return "text-amber-500 bg-amber-50"; // Eagle+
-    if (diff === -1) return "text-red-500 bg-red-50"; // Birdie
-    if (diff === 0) return "text-slate-900 bg-slate-50"; // Par
-    if (diff === 1) return "text-blue-600 bg-blue-50"; // Bogey
-    return "text-slate-500 bg-slate-50"; // Double+
-  };
-
   return (
     <Card className="border-0 shadow-sm overflow-hidden">
       <CardContent className="p-4">
@@ -300,48 +285,11 @@ function RoundSummaryCard({
           <Badge variant="outline" className="dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">{round.formatType.replace(/_/g, ' ')}</Badge>
         </div>
 
-        {/* Score Grid */}
-        <div className="grid grid-cols-9 gap-1 mb-4">
-          {playerScores.map((score, idx) => {
-            const hole = round.holes?.[idx];
-            return (
-              <div key={score.id} className="text-center">
-                <div className="text-[10px] text-muted-foreground mb-1">H{score.holeNumber}</div>
-                <div className={clsx(
-                  "rounded px-2 py-1 font-bold text-sm",
-                  getScoreColor(score.grossScore || 0, hole?.par || 4)
-                )}>
-                  {score.grossScore}
-                </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">
-                  {score.netScore}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Totals */}
-        <div className="border-t pt-3 grid grid-cols-4 gap-2 text-sm">
-          <div className="text-center">
-            <div className="text-xs text-muted-foreground">Gross</div>
-            <div className="font-bold text-lg">{grossTotal}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-muted-foreground">Course HCP</div>
-            <div className="font-bold text-lg">
-              {playerScores[0]?.handicapUsed ?? playerHandicap}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-muted-foreground">Net</div>
-            <div className="font-bold text-lg text-primary">{netTotal}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-muted-foreground">Stableford</div>
-            <div className="font-bold text-lg text-primary">{stablefordTotal}</div>
-          </div>
-        </div>
+        <ScoreboardTable
+          playerScores={playerScores}
+          holes={round.holes || []}
+          roundFormat={round.formatType}
+        />
       </CardContent>
     </Card>
   );
@@ -374,97 +322,16 @@ function RoundDetailCard({
     );
   }
 
-  const grossTotal = playerScores.reduce((sum, s) => sum + (s.grossScore || 0), 0);
-  const netTotal = playerScores.reduce((sum, s) => sum + (s.netScore || 0), 0);
-  const stablefordTotal = playerScores.reduce((sum, s) => sum + (s.stablefordPoints || 0), 0);
-
   return (
     <div className="space-y-4">
       <Card className="border-0 shadow-lg">
         <CardContent className="p-6">
           <h3 className="font-bold text-xl mb-4">{round.course.name}</h3>
-
-          {/* Hole-by-Hole Scorecard */}
-          <div className="space-y-4">
-            {/* Front 9 */}
-            <div>
-              <h4 className="font-semibold text-sm text-muted-foreground mb-2">Front 9</h4>
-              <div className="grid grid-cols-9 gap-2">
-                {playerScores.slice(0, 9).map((score) => {
-                  const hole = round.holes?.find(h => h.number === score.holeNumber);
-                  const diff = (score.grossScore || 0) - (hole?.par || 4);
-                  return (
-                    <div key={score.id} className="text-center">
-                      <div className="text-xs font-bold text-muted-foreground mb-1">H{score.holeNumber}</div>
-                      <div className="bg-white border-2 border-slate-200 rounded p-2">
-                        <div className="font-bold text-lg text-slate-900">{score.grossScore}</div>
-                        <div className="text-xs text-slate-700">
-                          {diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : 'E'}
-                        </div>
-                      </div>
-                      <div className="text-xs mt-1">
-                        <div className="text-muted-foreground">Par {hole?.par}</div>
-                        <div className="text-primary font-semibold">{score.stablefordPoints}pts</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Back 9 */}
-            <div>
-              <h4 className="font-semibold text-sm text-muted-foreground mb-2">Back 9</h4>
-              <div className="grid grid-cols-9 gap-2">
-                {playerScores.slice(9, 18).map((score) => {
-                  const hole = round.holes?.find(h => h.number === score.holeNumber);
-                  const diff = (score.grossScore || 0) - (hole?.par || 4);
-                  return (
-                    <div key={score.id} className="text-center">
-                      <div className="text-xs font-bold text-muted-foreground mb-1">H{score.holeNumber}</div>
-                      <div className="bg-white border-2 border-slate-200 rounded p-2">
-                        <div className="font-bold text-lg text-slate-900">{score.grossScore}</div>
-                        <div className="text-xs text-slate-700">
-                          {diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : 'E'}
-                        </div>
-                      </div>
-                      <div className="text-xs mt-1">
-                        <div className="text-muted-foreground">Par {hole?.par}</div>
-                        <div className="text-primary font-semibold">{score.stablefordPoints}pts</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Summary Stats */}
-          <div className="border-t mt-6 pt-6 grid grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground mb-1">GROSS</div>
-              <div className="text-3xl font-bold">{grossTotal}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground mb-1">COURSE HANDICAP</div>
-              <div className="text-3xl font-bold">
-                {playerScores[0]?.handicapUsed ?? playerHandicap}
-              </div>
-              {playerScores[0]?.handicapUsed !== playerHandicap && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  (Index: {playerHandicap})
-                </div>
-              )}
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground mb-1">NET</div>
-              <div className="text-3xl font-bold text-primary">{netTotal}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground mb-1">STABLEFORD</div>
-              <div className="text-3xl font-bold text-primary">{stablefordTotal}</div>
-            </div>
-          </div>
+          <ScoreboardTable
+            playerScores={playerScores}
+            holes={round.holes || []}
+            roundFormat={round.formatType}
+          />
         </CardContent>
       </Card>
     </div>
