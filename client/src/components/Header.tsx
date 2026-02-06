@@ -18,8 +18,8 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
           {/* Menu Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <Menu className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              <button className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <Menu className="w-6 h-6 text-slate-700 dark:text-slate-200" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
