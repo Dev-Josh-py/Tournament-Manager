@@ -106,7 +106,7 @@ export default function IndividualLeaderboard() {
         ...p,
         toPar: p.totalNetScore - p.totalPar,
       }))
-      .sort((a, b) => a.totalNetScore - b.totalNetScore)
+      .sort((a, b) => a.toPar - b.toPar)
       .map((p, idx) => ({ ...p, rank: idx + 1 }));
 
     return standings;
