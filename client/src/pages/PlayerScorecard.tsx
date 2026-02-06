@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
-import { usePlayers, useRounds, useScores, useUpdatePlayerHandicap } from "@/hooks/use-tournament";
+import { usePlayers, useRounds, useScores, useUpdatePlayerHandicap, useRoundHandicaps } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
@@ -260,7 +260,9 @@ function RoundSummaryCard({
   playerHandicap: number
 }) {
   const { data: scores } = useScores(round.id);
+  const { data: handicaps } = useRoundHandicaps(round.id);
   const playerScores = scores?.filter(s => s.playerId === playerId) || [];
+  const playerHandicapData = handicaps?.find(h => h.playerId === playerId);
 
   if (playerScores.length === 0) {
     return (
@@ -289,6 +291,7 @@ function RoundSummaryCard({
           playerScores={playerScores}
           holes={round.holes || []}
           roundFormat={round.formatType}
+          courseHandicap={playerHandicapData?.courseHandicap}
         />
       </CardContent>
     </Card>
@@ -306,9 +309,11 @@ function RoundDetailCard({
 }) {
   const { data: allScores } = useScores(roundId);
   const { data: rounds } = useRounds();
+  const { data: handicaps } = useRoundHandicaps(roundId);
 
   const round = rounds?.find(r => r.id === roundId);
   const playerScores = allScores?.filter(s => s.playerId === playerId) || [];
+  const playerHandicapData = handicaps?.find(h => h.playerId === playerId);
 
   if (!round) return null;
 
@@ -331,6 +336,7 @@ function RoundDetailCard({
             playerScores={playerScores}
             holes={round.holes || []}
             roundFormat={round.formatType}
+            courseHandicap={playerHandicapData?.courseHandicap}
           />
         </CardContent>
       </Card>

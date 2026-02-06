@@ -20,9 +20,10 @@ interface ScoreboardTableProps {
   holes: Hole[];
   roundFormat?: string;
   compact?: boolean;
+  courseHandicap?: number;
 }
 
-export function ScoreboardTable({ playerScores, holes, roundFormat, compact = false }: ScoreboardTableProps) {
+export function ScoreboardTable({ playerScores, holes, roundFormat, compact = false, courseHandicap }: ScoreboardTableProps) {
   // Sort scores by hole number
   const sortedScores = [...playerScores].sort((a, b) => a.holeNumber - b.holeNumber);
 
@@ -203,6 +204,13 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
 
   return (
     <div className={compact ? "space-y-3" : "space-y-6"}>
+      {/* Course Handicap indicator - shown in larger scorecards only */}
+      {!compact && courseHandicap !== undefined && (
+        <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+          Course HCP: <span className="font-bold text-slate-900 dark:text-slate-100">{courseHandicap}</span>
+        </div>
+      )}
+
       {renderNine(front9, 'FRONT 9')}
       {renderNine(back9, 'BACK 9')}
 
