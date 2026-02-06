@@ -308,6 +308,7 @@ export default function IndividualLeaderboard() {
                             playerScores={expandedRoundScores.filter(s => s.playerId === player.playerId)}
                             holes={displayRoundInfo.round.holes || []}
                             roundFormat={displayRoundInfo.round.formatType}
+                            compact={true}
                           />
                         ) : (
                           <div className="text-center py-8 text-muted-foreground">

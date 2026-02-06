@@ -19,9 +19,10 @@ interface ScoreboardTableProps {
   playerScores: Score[];
   holes: Hole[];
   roundFormat?: string;
+  compact?: boolean;
 }
 
-export function ScoreboardTable({ playerScores, holes, roundFormat }: ScoreboardTableProps) {
+export function ScoreboardTable({ playerScores, holes, roundFormat, compact = false }: ScoreboardTableProps) {
   // Sort scores by hole number
   const sortedScores = [...playerScores].sort((a, b) => a.holeNumber - b.holeNumber);
 
@@ -68,17 +69,17 @@ export function ScoreboardTable({ playerScores, holes, roundFormat }: Scoreboard
     const parOut = calculateSum(holeNumbers, 'par');
 
     return (
-      <div key={sectionLabel} className="mb-6">
-        <h4 className="font-bold text-sm mb-2">{sectionLabel}</h4>
+      <div key={sectionLabel} className={compact ? "mb-3" : "mb-6"}>
+        {!compact && <h4 className="font-bold text-sm mb-2">{sectionLabel}</h4>}
         <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
-          <table className="w-full text-sm">
+          <table className={clsx("w-full", compact ? "text-xs" : "text-sm")}>
             <thead>
               <tr className="bg-green-600 text-white">
                 <th className="px-2 py-2 text-left font-bold">Hole</th>
                 {holeNumbers.map(h => (
                   <th key={h} className="px-1.5 py-2 text-center font-bold">{h}</th>
                 ))}
-                <th className="px-1.5 py-2 text-center font-bold">{sectionLabel === 'FRONT 9' ? 'Out' : 'In'}</th>
+                {!compact && <th className="px-1.5 py-2 text-center font-bold">{sectionLabel === 'FRONT 9' ? 'Out' : 'In'}</th>}
               </tr>
             </thead>
             <tbody>
@@ -93,10 +94,11 @@ export function ScoreboardTable({ playerScores, holes, roundFormat }: Scoreboard
                     </td>
                   );
                 })}
-                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{parOut}</td>
+                {!compact && <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{parOut}</td>}
               </tr>
 
-              {/* Stroke row */}
+              {/* Stroke row - hidden in compact mode */}
+              {!compact && (
               <tr className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                 <td className="px-2 py-2 font-semibold text-slate-600 dark:text-slate-400">Stroke</td>
                 {holeNumbers.map(h => {
@@ -109,6 +111,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat }: Scoreboard
                 })}
                 <td className="px-1.5 py-2 text-center text-slate-600 dark:text-slate-400">-</td>
               </tr>
+              )}
 
               {/* Score row */}
               <tr className="border-t border-slate-200 dark:border-slate-700">
@@ -131,9 +134,9 @@ export function ScoreboardTable({ playerScores, holes, roundFormat }: Scoreboard
                     </td>
                   );
                 })}
-                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">
+                {!compact && <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">
                   {scoreOut}
-                </td>
+                </td>}
               </tr>
 
               {/* Net row */}
@@ -148,7 +151,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat }: Scoreboard
                     </td>
                   );
                 })}
-                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{netOut}</td>
+                {!compact && <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{netOut}</td>}
               </tr>
             </tbody>
           </table>
@@ -168,11 +171,12 @@ export function ScoreboardTable({ playerScores, holes, roundFormat }: Scoreboard
   const backScore = calculateSum(back9, 'grossScore');
 
   return (
-    <div className="space-y-6">
+    <div className={compact ? "space-y-3" : "space-y-6"}>
       {renderNine(front9, 'FRONT 9')}
       {renderNine(back9, 'BACK 9')}
 
-      {/* Summary Stats */}
+      {/* Summary Stats - hidden in compact mode */}
+      {!compact && (
       <div className="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
@@ -198,6 +202,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat }: Scoreboard
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
