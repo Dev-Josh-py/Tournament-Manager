@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Trophy, Users, Calendar, ClipboardEdit, BookOpen } from "lucide-react";
+import { Trophy, Users, Calendar, ClipboardEdit } from "lucide-react";
 import { clsx } from "clsx";
 
 export function BottomNav() {
@@ -11,7 +11,6 @@ export function BottomNav() {
     { href: "/schedule", icon: Calendar, label: "Schedule" },
     { href: "/scoring", icon: ClipboardEdit, label: "Scoring" },
     { href: "/players", icon: Users, label: "Players" },
-    { href: "/rules", icon: BookOpen, label: "Rules" },
   ];
 
   return (

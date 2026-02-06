@@ -1,5 +1,7 @@
 import { Link } from "wouter";
 import { ThemeToggle } from "./ThemeToggle";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Menu, BookOpen, Settings } from "lucide-react";
 
 export function Header({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
@@ -12,6 +14,31 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+
+          {/* Menu Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <Menu className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <Link href="/rules">
+                <DropdownMenuItem className="cursor-pointer">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  <span>Rules & Format</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
+              <Link href="/">
+                <DropdownMenuItem className="cursor-pointer">
+                  <Settings className="w-4 h-4 mr-2" />
+                  <span>Home</span>
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Simple Brand/Logo Placeholder */}
           <Link href="/">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-primary/20">
