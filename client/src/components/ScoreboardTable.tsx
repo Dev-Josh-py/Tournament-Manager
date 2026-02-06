@@ -68,6 +68,12 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
     const netOut = calculateSum(holeNumbers, 'netScore');
     const parOut = calculateSum(holeNumbers, 'par');
 
+    // Calculate stableford points total for this nine
+    const ptsOut = holeNumbers.reduce((sum, holeNum) => {
+      const score = getScore(holeNum);
+      return sum + (score?.stablefordPoints || 0);
+    }, 0);
+
     return (
       <div key={sectionLabel} className={compact ? "mb-3" : "mb-6"}>
         {!compact && <h4 className="font-bold text-sm mb-2">{sectionLabel}</h4>}
@@ -168,6 +174,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                     </td>
                   );
                 })}
+                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{ptsOut}</td>
               </tr>
             </tbody>
           </table>
