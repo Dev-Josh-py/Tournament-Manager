@@ -8,9 +8,9 @@ export function BottomNav() {
   const navItems = [
     { href: "/", icon: Trophy, label: "Teams" },
     { href: "/individual", icon: Users, label: "Individual" },
-    { href: "/schedule", icon: Calendar, label: "Schedule" },
     { href: "/scoring", icon: ClipboardEdit, label: "Scoring" },
     { href: "/players", icon: Users, label: "Players" },
+    { href: "/schedule", icon: Calendar, label: "Schedule" },
   ];
 
   return (
