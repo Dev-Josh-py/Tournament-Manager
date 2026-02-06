@@ -1,14 +1,36 @@
 import { Link } from "wouter";
-import { useRounds } from "@/hooks/use-tournament";
+import { useRounds, useRoundHandicaps } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Info, Settings } from "lucide-react";
+import { Calendar, MapPin, Info, Settings, CheckCircle2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { clsx } from "clsx";
+
+function HandicapStatusIndicator({ roundId }: { roundId: number }) {
+  const { data: handicaps } = useRoundHandicaps(roundId);
+
+  const hasHandicaps = handicaps && handicaps.length > 0;
+
+  return (
+    <div className="flex items-center gap-1">
+      {hasHandicaps ? (
+        <>
+          <CheckCircle2 className="w-4 h-4 text-green-600" />
+          <span className="text-xs text-green-600 font-medium">HCP Set</span>
+        </>
+      ) : (
+        <>
+          <AlertCircle className="w-4 h-4 text-amber-600" />
+          <span className="text-xs text-amber-600 font-medium">HCP Pending</span>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function Schedule() {
   const { data: rounds, isLoading } = useRounds();
@@ -41,9 +63,12 @@ export default function Schedule() {
                 <div className="h-2 bg-primary/20 w-full" />
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start mb-2">
-                    <Badge variant="outline" className="font-mono text-xs uppercase tracking-wider mb-2">
-                      Round {round.roundNumber}
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Badge variant="outline" className="font-mono text-xs uppercase tracking-wider mb-2">
+                        Round {round.roundNumber}
+                      </Badge>
+                      <HandicapStatusIndicator roundId={round.id} />
+                    </div>
                     {round.isCompleted ? (
                       <Badge className="bg-slate-200 text-slate-600 hover:bg-slate-300">Completed</Badge>
                     ) : (
