@@ -22,7 +22,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
                 <Menu className="w-6 h-6 text-slate-700 dark:text-slate-200" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-800 backdrop-blur-md">
               <Link href="/rules">
                 <DropdownMenuItem className="cursor-pointer">
                   <BookOpen className="w-4 h-4 mr-2" />
