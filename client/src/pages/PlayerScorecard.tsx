@@ -1,24 +1,76 @@
-import { useState } from "react";
-import { usePlayers, useRounds, useScores } from "@/hooks/use-tournament";
+import { useState, useEffect } from "react";
+import { useParams } from "wouter";
+import { usePlayers, useRounds, useScores, useUpdatePlayerHandicap } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { clsx } from "clsx";
 
 export default function PlayerScorecard() {
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
+  const params = useParams();
+  const playerId = params?.id ? Number(params.id) : null;
+
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>(playerId ? String(playerId) : "");
   const [selectedRoundId, setSelectedRoundId] = useState<string>("");
+  const [editingHandicap, setEditingHandicap] = useState<boolean>(false);
+  const [newHandicap, setNewHandicap] = useState<string>("");
 
   const { data: players } = usePlayers();
   const { data: rounds } = useRounds();
+  const updateHandicap = useUpdatePlayerHandicap();
+  const { toast } = useToast();
+
+  // Set selectedPlayerId from URL params on mount
+  useEffect(() => {
+    if (playerId && !selectedPlayerId) {
+      setSelectedPlayerId(String(playerId));
+    }
+  }, [playerId]);
 
   const selectedPlayer = players?.find(p => p.id === Number(selectedPlayerId));
   const selectedRound = rounds?.find(r => r.id === Number(selectedRoundId));
+
+  const handleSaveHandicap = async () => {
+    if (!selectedPlayer) return;
+
+    const handicapValue = parseFloat(newHandicap);
+    if (isNaN(handicapValue) || handicapValue < 0 || handicapValue > 54) {
+      toast({
+        title: "Invalid Input",
+        description: "Handicap index must be between 0 and 54",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await updateHandicap.mutateAsync({
+        playerId: selectedPlayer.id,
+        handicap: handicapValue,
+      });
+
+      toast({
+        title: "Success",
+        description: "Handicap index updated successfully",
+      });
+
+      setEditingHandicap(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update handicap",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24">
@@ -40,7 +92,7 @@ export default function PlayerScorecard() {
               <SelectContent className="z-[100] bg-white dark:bg-slate-800 dark:border-slate-700 backdrop-blur-sm">
                 {players?.map((p) => (
                   <SelectItem key={p.id} value={String(p.id)}>
-                    {p.name} (HCP: {p.handicap}) - {p.team?.name}
+                    {p.name} (HCP Index: {p.handicap}) - {p.team?.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -60,10 +112,65 @@ export default function PlayerScorecard() {
                       style={{ backgroundColor: selectedPlayer.team?.color || "#888" }}
                     />
                   </div>
-                  <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>Handicap: <strong>{selectedPlayer.handicap}</strong></span>
-                    <span>Team: <strong>{selectedPlayer.team?.name || "N/A"}</strong></span>
-                  </div>
+
+                  {/* Player Info */}
+                  {editingHandicap ? (
+                    <div className="space-y-3">
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span>Team: <strong>{selectedPlayer.team?.name || "N/A"}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Label htmlFor="edit-handicap" className="font-medium whitespace-nowrap">
+                          Handicap Index:
+                        </Label>
+                        <Input
+                          id="edit-handicap"
+                          type="number"
+                          min="0"
+                          max="54"
+                          step="0.1"
+                          value={newHandicap}
+                          onChange={(e) => setNewHandicap(e.target.value)}
+                          className="w-24 text-center font-bold"
+                          autoFocus
+                        />
+                        <Button
+                          onClick={handleSaveHandicap}
+                          disabled={updateHandicap.isPending}
+                          size="sm"
+                          variant="default"
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setEditingHandicap(false);
+                            setNewHandicap("");
+                          }}
+                          disabled={updateHandicap.isPending}
+                          size="sm"
+                          variant="outline"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-4 text-sm text-muted-foreground items-center">
+                      <span>Handicap Index: <strong>{selectedPlayer.handicap}</strong></span>
+                      <span>Team: <strong>{selectedPlayer.team?.name || "N/A"}</strong></span>
+                      <Button
+                        onClick={() => {
+                          setEditingHandicap(true);
+                          setNewHandicap(String(selectedPlayer.handicap));
+                        }}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -345,7 +452,7 @@ function RoundDetailCard({
               </div>
               {playerScores[0]?.handicapUsed !== playerHandicap && (
                 <div className="text-xs text-muted-foreground mt-1">
-                  (Base: {playerHandicap})
+                  (Index: {playerHandicap})
                 </div>
               )}
             </div>

@@ -29,7 +29,10 @@ export default function RoundSetup() {
     if (roundHandicaps) {
       const initialValues: Record<number, number> = {};
       roundHandicaps.forEach(h => {
-        initialValues[h.playerId] = h.courseHandicap;
+        // Only set if courseHandicap is set (not null)
+        if (h.courseHandicap !== null && h.courseHandicap !== undefined) {
+          initialValues[h.playerId] = h.courseHandicap;
+        }
       });
       setHandicapValues(initialValues);
     }
@@ -111,7 +114,7 @@ export default function RoundSetup() {
                     <div className="flex-grow">
                       <div className="font-bold text-lg">{h.playerName}</div>
                       <div className="text-sm text-muted-foreground">
-                        Base Handicap: {h.baseHandicap}
+                        Handicap Index: {h.baseHandicap}
                       </div>
                     </div>
 
@@ -124,7 +127,9 @@ export default function RoundSetup() {
                         type="number"
                         min="0"
                         max="54"
-                        value={handicapValues[h.playerId] ?? h.courseHandicap}
+                        step="1"
+                        placeholder="Required"
+                        value={handicapValues[h.playerId] ?? ""}
                         onChange={(e) => handleInputChange(h.playerId, e.target.value)}
                         className="w-20 text-center font-bold text-lg"
                       />
@@ -135,7 +140,7 @@ export default function RoundSetup() {
                   {handicapValues[h.playerId] !== h.baseHandicap && (
                     <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
                       {handicapValues[h.playerId] > h.baseHandicap ? '+' : ''}
-                      {handicapValues[h.playerId] - h.baseHandicap} from base
+                      {handicapValues[h.playerId] - h.baseHandicap} from index
                     </div>
                   )}
                 </CardContent>

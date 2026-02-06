@@ -10,7 +10,7 @@ import { eq, and, asc, desc, sum, sql, inArray } from "drizzle-orm";
 export type RoundHandicapDisplay = {
   playerId: number;
   playerName: string;
-  courseHandicap: number;
+  courseHandicap: number | null;
   baseHandicap: number;
 };
 
@@ -42,6 +42,9 @@ export interface IStorage {
   // Round Handicaps
   getRoundHandicaps(roundId: number): Promise<RoundHandicapDisplay[]>;
   updateRoundHandicaps(roundId: number, handicaps: RoundHandicapInput[]): Promise<{ success: boolean; updated: number }>;
+
+  // Player Handicap
+  updatePlayerHandicap(playerId: number, handicap: number): Promise<Player>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -121,13 +124,14 @@ export class DatabaseStorage implements IStorage {
       .from(roundHandicaps)
       .where(eq(roundHandicaps.roundId, roundId));
 
-    // Map to display format with fallback to base handicap
+    // Map to display format - NO fallback to base handicap
+    // Course handicap must be explicitly set for each round
     return playersList.map(player => {
       const roundHandicap = existingHandicaps.find(h => h.playerId === player.id);
       return {
         playerId: player.id,
         playerName: player.name,
-        courseHandicap: roundHandicap?.courseHandicap ?? player.handicap ?? 0,
+        courseHandicap: roundHandicap?.courseHandicap ?? null,
         baseHandicap: player.handicap ?? 0,
       };
     });
@@ -174,6 +178,15 @@ export class DatabaseStorage implements IStorage {
     return { success: true, updated };
   }
 
+  async updatePlayerHandicap(playerId: number, handicap: number): Promise<Player> {
+    const [updatedPlayer] = await db
+      .update(players)
+      .set({ handicap })
+      .where(eq(players.id, playerId))
+      .returning();
+    return updatedPlayer;
+  }
+
   private async recalculateRoundScores(roundId: number, playerIds: number[]): Promise<void> {
     // Get the round with holes
     const round = await this.getRound(roundId);
@@ -205,24 +218,18 @@ export class DatabaseStorage implements IStorage {
       roundHandicapRecords.map(rh => [rh.playerId, rh.courseHandicap])
     );
 
-    // Get base handicaps as fallback
-    const playerRecords = await db.select().from(players);
-    const playerHandicapMap = new Map(
-      playerRecords.map(p => [p.id, p.handicap])
-    );
-
     // Recalculate and update each score
     for (const score of roundScores) {
       const hole = (round as any).holes?.find((h: any) => h.number === score.holeNumber);
       if (!hole) continue;
 
-      // Use course handicap if set, otherwise fall back to base handicap
-      const handicapToUse = handicapMap.get(score.playerId) ?? (playerHandicapMap.get(score.playerId) || 0);
+      // Use course handicap if set, otherwise use 0 (course handicap should be set before scoring)
+      const handicapToUse: number = handicapMap.get(score.playerId) ?? 0;
 
       const { netScore, stablefordPoints } = this.calculatePoints(
-        score.grossScore,
-        hole.par,
-        hole.strokeIndex,
+        (score.grossScore as number) || 0,
+        (hole.par as number) ?? 4,
+        (hole.strokeIndex as number) ?? 1,
         handicapToUse
       );
 
@@ -239,12 +246,6 @@ export class DatabaseStorage implements IStorage {
     const allRounds = await this.getRounds();
     let totalUpdated = 0;
 
-    // Get all players for handicap lookup
-    const playerRecords = await db.select().from(players);
-    const playerHandicapMap = new Map(
-      playerRecords.map(p => [p.id, p.handicap])
-    );
-
     // Process each round
     for (const round of allRounds) {
       const roundWithHoles = await this.getRound(round.id);
@@ -260,7 +261,9 @@ export class DatabaseStorage implements IStorage {
         .where(eq(roundHandicaps.roundId, round.id));
 
       const handicapMap = new Map(
-        roundHandicapRecords.map(rh => [rh.playerId, rh.courseHandicap])
+        roundHandicapRecords
+          .filter(rh => rh.courseHandicap !== null)
+          .map(rh => [rh.playerId, rh.courseHandicap as number])
       );
 
       // Recalculate and update each score
@@ -268,13 +271,13 @@ export class DatabaseStorage implements IStorage {
         const hole = (roundWithHoles as any).holes?.find((h: any) => h.number === score.holeNumber);
         if (!hole) continue;
 
-        // Use course handicap if set, otherwise fall back to base handicap
-        const handicapToUse = handicapMap.get(score.playerId) ?? (playerHandicapMap.get(score.playerId) || 0);
+        // Use course handicap if set, otherwise use 0 (course handicap should be set before scoring)
+        const handicapToUse: number = handicapMap.get(score.playerId) ?? 0;
 
         const { netScore, stablefordPoints } = this.calculatePoints(
-          score.grossScore,
-          hole.par,
-          hole.strokeIndex,
+          (score.grossScore as number) || 0,
+          (hole.par as number) ?? 4,
+          (hole.strokeIndex as number) ?? 1,
           handicapToUse
         );
 
@@ -319,10 +322,11 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    // Use round handicap if exists, otherwise fall back to base handicap
-    const handicapToUse = roundHandicapRecord.length > 0
+    // Use round-specific course handicap (should always be set before scoring)
+    // If not set, use 0 as fallback (frontend blocks scoring if not set)
+    const handicapToUse = roundHandicapRecord.length > 0 && roundHandicapRecord[0].courseHandicap !== null
       ? roundHandicapRecord[0].courseHandicap
-      : (player.handicap || 0);
+      : 0;
 
     const hole = (round as any).holes?.find((h: any) => h.number === data.holeNumber);
     if (!hole) throw new Error("Hole not found");

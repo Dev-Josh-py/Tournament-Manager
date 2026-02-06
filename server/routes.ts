@@ -110,6 +110,24 @@ export async function registerRoutes(
     }
   });
 
+  // Update player handicap index
+  app.put('/api/players/:id/handicap', async (req, res) => {
+    try {
+      const playerId = Number(req.params.id);
+      const { handicap } = req.body;
+
+      // Validation - allow decimals for handicap index
+      if (typeof handicap !== 'number' || handicap < 0 || handicap > 54) {
+        return res.status(400).json({ error: 'Handicap index must be between 0 and 54' });
+      }
+
+      const updatedPlayer = await storage.updatePlayerHandicap(playerId, handicap);
+      res.json(updatedPlayer);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
   // Recalculate all scores (admin endpoint)
   app.post('/api/admin/recalculate-scores', async (req, res) => {
     try {

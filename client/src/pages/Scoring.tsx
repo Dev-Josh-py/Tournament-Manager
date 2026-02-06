@@ -116,7 +116,7 @@ export default function Scoring() {
                 <SelectContent className="z-[100] bg-white dark:bg-slate-800 dark:border-slate-700 backdrop-blur-sm">
                   {players?.map((p) => (
                     <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name} (Base HCP: {p.handicap})
+                      {p.name} (HCP Index: {p.handicap})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -126,7 +126,7 @@ export default function Scoring() {
 
           {/* Check if handicaps are set for this round */}
           {selectedRoundId && roundHandicaps && selectedPlayerId && (() => {
-            const allHandicapsSet = roundHandicaps.every(h => h.courseHandicap !== undefined);
+            const allHandicapsSet = roundHandicaps.every(h => h.courseHandicap !== null && h.courseHandicap !== undefined);
             const currentPlayerHandicap = roundHandicaps.find(h => h.playerId === Number(selectedPlayerId));
 
             if (!allHandicapsSet) {
@@ -166,7 +166,7 @@ export default function Scoring() {
                       </span>
                       {currentPlayerHandicap.courseHandicap !== currentPlayerHandicap.baseHandicap && (
                         <span className="text-xs text-muted-foreground ml-2">
-                          (Base: {currentPlayerHandicap.baseHandicap})
+                          (Index: {currentPlayerHandicap.baseHandicap})
                         </span>
                       )}
                     </div>

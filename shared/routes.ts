@@ -39,7 +39,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/players',
       responses: {
-        200: z.array(z.custom<typeof players.$inferSelect>()),
+        200: z.array(z.custom<typeof players.$inferSelect & { team: typeof teams.$inferSelect | null }>()),
       },
     },
   },

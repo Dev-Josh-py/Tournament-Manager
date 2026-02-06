@@ -13,6 +13,7 @@ import IndividualLeaderboard from "@/pages/IndividualLeaderboard";
 import Schedule from "@/pages/Schedule";
 import Scoring from "@/pages/Scoring";
 import PlayerScorecard from "@/pages/PlayerScorecard";
+import Players from "@/pages/Players";
 import RoundSetup from "@/pages/RoundSetup";
 import Rules from "@/pages/Rules";
 
@@ -23,7 +24,8 @@ function Router() {
       <Route path="/individual" component={IndividualLeaderboard} />
       <Route path="/schedule" component={Schedule} />
       <Route path="/scoring" component={Scoring} />
-      <Route path="/scorecard" component={PlayerScorecard} />
+      <Route path="/players" component={Players} />
+      <Route path="/player/:id" component={PlayerScorecard} />
       <Route path="/round-setup" component={RoundSetup} />
       <Route path="/rules" component={Rules} />
       <Route component={NotFound} />

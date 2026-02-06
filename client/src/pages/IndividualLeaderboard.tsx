@@ -154,7 +154,7 @@ export default function IndividualLeaderboard() {
                         />
                         <span>{player.teamName}</span>
                         <span>•</span>
-                        <span>HCP {player.handicap}</span>
+                        <span>HCP Index {player.handicap}</span>
                       </div>
                     </div>
 

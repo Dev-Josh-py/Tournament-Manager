@@ -235,3 +235,28 @@ export function useUpdateRoundHandicaps() {
     },
   });
 }
+
+export function useUpdatePlayerHandicap() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ playerId, handicap }: { playerId: number; handicap: number }) => {
+      const res = await fetch(`/api/players/${playerId}/handicap`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ handicap }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update handicap");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      // Invalidate players query to refresh data
+      queryClient.invalidateQueries({ queryKey: [api.players.list.path] });
+    },
+  });
+}
