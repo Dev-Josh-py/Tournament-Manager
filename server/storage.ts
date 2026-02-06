@@ -60,11 +60,24 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getRounds(): Promise<RoundWithCourse[]> {
-    return await db.query.rounds.findMany({
+  async getRounds(): Promise<(RoundWithCourse & { holes: Hole[] })[]> {
+    const allRounds = await db.query.rounds.findMany({
       with: { course: true },
       orderBy: asc(rounds.roundNumber)
     });
+
+    // Fetch holes for each round
+    const roundsWithHoles = await Promise.all(
+      allRounds.map(async (round) => {
+        const courseHoles = await db.select().from(holes).where(eq(holes.courseId, round.course.id));
+        return {
+          ...round,
+          holes: courseHoles
+        };
+      })
+    );
+
+    return roundsWithHoles as any;
   }
 
   async getRound(id: number): Promise<RoundWithCourse & { holes: Hole[] } | undefined> {

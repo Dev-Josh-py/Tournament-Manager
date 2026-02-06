@@ -48,7 +48,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/rounds',
       responses: {
-        200: z.array(z.custom<typeof rounds.$inferSelect & { course: typeof courses.$inferSelect }>()),
+        200: z.array(z.custom<typeof rounds.$inferSelect & { course: typeof courses.$inferSelect; holes: typeof holes.$inferSelect[] }>()),
       },
     },
     get: {

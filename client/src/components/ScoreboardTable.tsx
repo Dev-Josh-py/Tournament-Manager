@@ -131,10 +131,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat }: Scoreboard
                     </td>
                   );
                 })}
-                <td className={clsx(
-                  "px-1.5 py-2 text-center font-bold rounded",
-                  scoreOut > 0 && getScoreColor(scoreOut, parOut)
-                )}>
+                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">
                   {scoreOut}
                 </td>
               </tr>
