@@ -6,8 +6,10 @@ import { PageTransition } from "@/components/PageTransition";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScoreboardTable } from "@/components/ScoreboardTable";
-import { Users } from "lucide-react";
+import { Users, ChevronDown, ChevronUp } from "lucide-react";
 import { clsx } from "clsx";
 import { useLocation } from "wouter";
 
@@ -24,19 +26,62 @@ interface PlayerScore {
   handicap: number;
 }
 
+interface PlayerRoundScore {
+  playerId: number;
+  playerName: string;
+  teamName: string;
+  teamColor: string;
+  netScore: number;
+  par: number;
+  toPar: number;
+  handicap: number;
+  rank?: number;
+}
+
 export default function IndividualLeaderboard() {
   const { data: players } = usePlayers();
   const { data: rounds } = useRounds();
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
+  const [expandedRounds, setExpandedRounds] = useState<Set<number>>(new Set());
+  const [expandedPlayersByRound, setExpandedPlayersByRound] = useState<Map<number, number | null>>(new Map());
   const [, navigate] = useLocation();
 
   // Fetch scores for all rounds in parallel
   const roundIds = rounds?.map(r => r.id) || [];
   const { data: allScoresData } = useAllRoundsScores(roundIds);
 
-  // Toggle function for accordion behavior
+  // Toggle function for accordion behavior (Tournament tab)
   const togglePlayer = (playerId: number) => {
     setExpandedPlayerId(prev => prev === playerId ? null : playerId);
+  };
+
+  // Toggle "Show All" for a round
+  const toggleRoundExpansion = (roundId: number) => {
+    setExpandedRounds(prev => {
+      const next = new Set(prev);
+      if (next.has(roundId)) {
+        next.delete(roundId);
+        // Clear expanded player in this round
+        setExpandedPlayersByRound(prev => {
+          const next = new Map(prev);
+          next.delete(roundId);
+          return next;
+        });
+      } else {
+        next.add(roundId);
+      }
+      return next;
+    });
+  };
+
+  // Toggle scorecard for a player within a round
+  const togglePlayerInRound = (roundId: number, playerId: number) => {
+    setExpandedPlayersByRound(prev => {
+      const next = new Map(prev);
+      const current = next.get(roundId);
+      next.set(roundId, current === playerId ? null : playerId);
+      return next;
+    });
   };
 
   // Calculate individual standings
@@ -174,6 +219,175 @@ export default function IndividualLeaderboard() {
     { enabled: !!displayRoundInfo }
   );
 
+  // CompactPlayerCard Component - for By Round tab
+  const CompactPlayerCard = ({
+    player,
+    roundId,
+    round
+  }: {
+    player: PlayerRoundScore;
+    roundId: number;
+    round: any;
+  }) => {
+    const isExpanded = expandedPlayersByRound.get(roundId) === player.playerId;
+    const { data: roundScores } = useScores(roundId, { enabled: isExpanded });
+
+    return (
+      <div className="space-y-2">
+        <Card
+          className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer"
+          onClick={() => togglePlayerInRound(roundId, player.playerId)}
+        >
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              {/* Rank */}
+              <div className="w-8 text-center">
+                <span className="text-sm font-bold text-muted-foreground">#{player.rank}</span>
+              </div>
+
+              {/* Player Info */}
+              <div className="flex-grow">
+                <h4 className="font-semibold text-base">{player.playerName}</h4>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: player.teamColor }} />
+                  <span>{player.teamName}</span>
+                  <span>•</span>
+                  <span>HCP {player.handicap}</span>
+                </div>
+              </div>
+
+              {/* Scores */}
+              <div className="text-right">
+                <div className="text-xl font-bold">{player.netScore}</div>
+                <div className={clsx("text-sm font-semibold", getToParColor(player.toPar))}>
+                  {player.toPar > 0 ? '+' : ''}{player.toPar}
+                </div>
+                <div className="text-xs text-muted-foreground">({player.par} par)</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Expanded Scorecard */}
+        {isExpanded && (
+          <div className="animate-in slide-in-from-top-2 fade-in duration-200">
+            <Card className="border-l-4 border-l-primary shadow-md">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold text-lg">
+                      R{round.roundNumber}: {round.course.name}
+                    </h3>
+                  </div>
+                </div>
+
+                {roundScores && roundScores.some(s => s.playerId === player.playerId) ? (
+                  <ScoreboardTable
+                    playerScores={roundScores.filter(s => s.playerId === player.playerId)}
+                    holes={round.holes || []}
+                    roundFormat={round.formatType}
+                    compact={true}
+                  />
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No scores recorded for this round yet
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // RoundIndividualLeaderboard Component
+  const RoundIndividualLeaderboard = ({ roundId, round }: { roundId: number; round: any }) => {
+    const { data: roundScores } = useScores(roundId);
+
+    const roundStandings = useMemo(() => {
+      if (!players || !roundScores) return [];
+
+      const playerScoresMap = new Map<number, PlayerRoundScore>();
+
+      players.forEach(player => {
+        const playerRoundScores = roundScores.filter(s => s.playerId === player.id);
+        if (playerRoundScores.length === 0) return;
+
+        const netScore = playerRoundScores.reduce((sum, s) => sum + (s.netScore || 0), 0);
+        const par = playerRoundScores.reduce((sum, s) => {
+          const hole = round.holes?.find((h: any) => h.number === s.holeNumber);
+          return sum + (hole?.par || 0);
+        }, 0);
+
+        playerScoresMap.set(player.id, {
+          playerId: player.id,
+          playerName: player.name,
+          teamName: player.team?.name || "N/A",
+          teamColor: player.team?.color || "#888",
+          netScore,
+          par,
+          toPar: netScore - par,
+          handicap: player.handicap,
+        });
+      });
+
+      return Array.from(playerScoresMap.values())
+        .sort((a, b) => a.toPar - b.toPar)
+        .map((p, idx) => ({ ...p, rank: idx + 1 }));
+    }, [players, roundScores, round]);
+
+    const top3 = roundStandings.slice(0, 3);
+    const remaining = roundStandings.slice(3);
+
+    return (
+      <div className="space-y-3">
+        {/* Round Header */}
+        <div className="flex items-baseline justify-between px-1">
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+            Round {round.roundNumber}
+          </h3>
+          <span className="text-xs text-muted-foreground">{round.course.name}</span>
+        </div>
+
+        {/* Top 3 Players */}
+        {top3.length > 0 ? (
+          <div className="space-y-2">
+            {top3.map(player => (
+              <CompactPlayerCard key={player.playerId} player={player} roundId={roundId} round={round} />
+            ))}
+          </div>
+        ) : (
+          <Card className="bg-slate-50 border-dashed shadow-none">
+            <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground text-sm">
+              No scores posted yet
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Collapsible for Remaining Players */}
+        {remaining.length > 0 && (
+          <Collapsible open={expandedRounds.has(roundId)} onOpenChange={() => toggleRoundExpansion(roundId)}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full text-xs h-auto py-2">
+                {expandedRounds.has(roundId) ? (
+                  <><ChevronUp className="w-4 h-4 mr-1" />Show Less</>
+                ) : (
+                  <><ChevronDown className="w-4 h-4 mr-1" />Show All Players ({remaining.length} more)</>
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-2 pt-2">
+              {remaining.map(player => (
+                <CompactPlayerCard key={player.playerId} player={player} roundId={roundId} round={round} />
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24">
       <Header
@@ -182,10 +396,16 @@ export default function IndividualLeaderboard() {
       />
 
       <PageTransition>
-        <main className="max-w-2xl mx-auto px-4 space-y-4">
+        <main className="max-w-2xl mx-auto px-4">
+          <Tabs defaultValue="tournament" className="w-full">
+            <TabsList className="w-full grid grid-cols-2 mb-6 bg-slate-200 dark:bg-slate-800 p-1">
+              <TabsTrigger value="tournament">Tournament</TabsTrigger>
+              <TabsTrigger value="rounds">By Round</TabsTrigger>
+            </TabsList>
 
-          {standings.length > 0 ? (
-            standings.map((player, idx) => (
+            <TabsContent value="tournament" className="space-y-4">
+              {standings.length > 0 ? (
+                standings.map((player, idx) => (
               <div key={player.playerId} className="space-y-2">
                 {/* Player Summary Card */}
                 <Card className={clsx(
@@ -333,6 +553,23 @@ export default function IndividualLeaderboard() {
               <p>No score data available yet</p>
             </div>
           )}
+            </TabsContent>
+
+            <TabsContent value="rounds" className="space-y-8">
+              {rounds && rounds.length > 0 ? (
+                rounds.map(round => (
+                  <RoundIndividualLeaderboard key={round.id} roundId={round.id} round={round} />
+                ))
+              ) : (
+                <div className="text-center py-16 text-muted-foreground">
+                  <div className="bg-slate-100 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Users className="w-10 h-10 opacity-50" />
+                  </div>
+                  <p>No rounds scheduled yet</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
 
         </main>
       </PageTransition>
