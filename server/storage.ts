@@ -11,7 +11,7 @@ export type RoundHandicapDisplay = {
   playerId: number;
   playerName: string;
   courseHandicap: number | null;
-  baseHandicap: number;
+  baseHandicap: string | number;
 };
 
 export type RoundHandicapInput = {

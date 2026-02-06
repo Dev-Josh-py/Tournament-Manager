@@ -1,5 +1,5 @@
 
-import { pgTable, text, integer, boolean, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, serial, numeric } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -16,7 +16,7 @@ export const teams = pgTable("teams", {
 export const players = pgTable("players", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  handicap: integer("handicap").default(0),
+  handicap: numeric("handicap").default("0"),
   teamId: integer("team_id").references(() => teams.id),
 });
 
