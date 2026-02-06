@@ -174,7 +174,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                     </td>
                   );
                 })}
-                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{ptsOut}</td>
+                {!compact && <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{ptsOut}</td>}
               </tr>
             </tbody>
           </table>
