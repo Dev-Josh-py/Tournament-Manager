@@ -139,15 +139,15 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                 </td>}
               </tr>
 
-              {/* Net row */}
+              {/* Stableford Points row */}
               <tr className="border-t border-slate-200 dark:border-slate-700">
-                <td className="px-2 py-2 font-semibold text-slate-700 dark:text-slate-300">Net</td>
+                <td className="px-2 py-2 font-semibold text-slate-700 dark:text-slate-300">Pts</td>
                 {holeNumbers.map(h => {
                   const score = getScore(h);
-                  const netScore = score?.netScore;
+                  const stablefordPoints = score?.stablefordPoints;
                   return (
                     <td key={h} className="px-1.5 py-2 text-center text-slate-900 dark:text-slate-100">
-                      {netScore !== null && netScore !== undefined ? netScore : '-'}
+                      {stablefordPoints !== null && stablefordPoints !== undefined ? stablefordPoints : '-'}
                     </td>
                   );
                 })}
@@ -163,7 +163,14 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
   // Calculate totals
   const totalPar = calculateSum([...front9, ...back9], 'par');
   const totalScore = calculateSum([...front9, ...back9], 'grossScore');
-  const totalNet = calculateSum([...front9, ...back9], 'netScore');
+
+  // Calculate total stableford points
+  const allHoles = [...front9, ...back9];
+  const totalStableford = allHoles.reduce((sum, holeNum) => {
+    const score = getScore(holeNum);
+    return sum + (score?.stablefordPoints || 0);
+  }, 0);
+
   const toPar = totalScore - totalPar;
 
   const frontPar = calculateSum(front9, 'par');
@@ -188,8 +195,8 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalScore}</div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Net</div>
-            <div className="text-2xl font-bold text-primary">{totalNet}</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Points</div>
+            <div className="text-2xl font-bold text-primary">{totalStableford}</div>
           </div>
           <div className="text-center">
             <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">To Par</div>
