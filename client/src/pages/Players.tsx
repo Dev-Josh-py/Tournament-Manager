@@ -62,7 +62,7 @@ export default function Players() {
                                 Handicap Index
                               </div>
                               <div className="text-2xl font-bold text-primary">
-                                {player.handicap}
+                                {Number(player.handicap).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})}
                               </div>
                             </div>
                           </div>

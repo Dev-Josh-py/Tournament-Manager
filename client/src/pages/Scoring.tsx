@@ -116,7 +116,7 @@ export default function Scoring() {
                 <SelectContent className="z-[100] bg-white dark:bg-slate-800 dark:border-slate-700 backdrop-blur-sm">
                   {players?.map((p) => (
                     <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name} (HCP Index: {p.handicap})
+                      {p.name} (HCP Index: {Number(p.handicap).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})})
                     </SelectItem>
                   ))}
                 </SelectContent>
