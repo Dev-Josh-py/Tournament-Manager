@@ -114,7 +114,7 @@ export default function RoundSetup() {
                     <div className="flex-grow">
                       <div className="font-bold text-lg">{h.playerName}</div>
                       <div className="text-sm text-muted-foreground">
-                        Handicap Index: {Number(h.baseHandicap).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})}
+                        Handicap Index: {h.baseHandicap}
                       </div>
                     </div>
 

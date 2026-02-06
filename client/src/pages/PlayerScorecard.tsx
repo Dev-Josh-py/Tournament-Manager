@@ -92,7 +92,7 @@ export default function PlayerScorecard() {
               <SelectContent className="z-[100] bg-white dark:bg-slate-800 dark:border-slate-700 backdrop-blur-sm">
                 {players?.map((p) => (
                   <SelectItem key={p.id} value={String(p.id)}>
-                    {p.name} (HCP Index: {Number(p.handicap).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})}) - {p.team?.name}
+                    {p.name} (HCP Index: {p.handicap}) - {p.team?.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -157,7 +157,7 @@ export default function PlayerScorecard() {
                     </div>
                   ) : (
                     <div className="flex gap-4 text-sm text-muted-foreground items-center">
-                      <span>Handicap Index: <strong>{Number(selectedPlayer.handicap).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})}</strong></span>
+                      <span>Handicap Index: <strong>{selectedPlayer.handicap}</strong></span>
                       <span>Team: <strong>{selectedPlayer.team?.name || "N/A"}</strong></span>
                       <Button
                         onClick={() => {

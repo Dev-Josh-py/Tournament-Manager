@@ -154,7 +154,7 @@ export default function IndividualLeaderboard() {
                         />
                         <span>{player.teamName}</span>
                         <span>•</span>
-                        <span>HCP Index {Number(player.handicap).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})}</span>
+                        <span>HCP Index {player.handicap}</span>
                       </div>
                     </div>
 
