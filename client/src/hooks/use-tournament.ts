@@ -229,8 +229,24 @@ export function useUpdateRoundHandicaps() {
       return res.json();
     },
     onSuccess: (_, variables) => {
+      // Invalidate handicaps for this round
       queryClient.invalidateQueries({
         queryKey: ['/api/rounds/:roundId/handicaps', variables.roundId]
+      });
+      // Invalidate scores for this round (net scores may be affected by handicap changes)
+      queryClient.invalidateQueries({
+        queryKey: [api.scores.list.path, variables.roundId]
+      });
+      // Invalidate leaderboards (standings are affected by net score changes)
+      queryClient.invalidateQueries({
+        queryKey: [api.leaderboard.tournament.path]
+      });
+      queryClient.invalidateQueries({
+        queryKey: [api.leaderboard.round.path, variables.roundId]
+      });
+      // Invalidate all-rounds-scores cache used by Individual Leaderboard
+      queryClient.invalidateQueries({
+        queryKey: ['all-rounds-scores']
       });
     },
   });
