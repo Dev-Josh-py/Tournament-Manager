@@ -514,42 +514,6 @@ export default function Scoring() {
                   </Button>
                 </div>
 
-                {/* Hole Navigator */}
-                <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-slate-100">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setUnsavedWarningShown(false);
-                      setCurrentHole(Math.max(1, currentHole - 1));
-                    }}
-                    disabled={currentHole === 1}
-                  >
-                    <ChevronLeft className="w-6 h-6 text-slate-400" />
-                  </Button>
-
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold font-display text-primary">Hole {currentHole}</h2>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
-                      <span>Par {currentHoleData.par}</span>
-                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                      <span>SI {currentHoleData.strokeIndex}</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setUnsavedWarningShown(false);
-                      setCurrentHole(Math.min(18, currentHole + 1));
-                    }}
-                    disabled={currentHole === 18}
-                  >
-                    <ChevronRight className="w-6 h-6 text-slate-400" />
-                  </Button>
-                </div>
-
                 {/* Hole Selector Grid */}
                 <Card className="border-none shadow-sm bg-white">
                   <CardContent className="p-3">
@@ -589,6 +553,42 @@ export default function Scoring() {
                   </CardContent>
                 </Card>
 
+                {/* Hole Navigator */}
+                <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-slate-100">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setUnsavedWarningShown(false);
+                      setCurrentHole(Math.max(1, currentHole - 1));
+                    }}
+                    disabled={currentHole === 1}
+                  >
+                    <ChevronLeft className="w-6 h-6 text-slate-400" />
+                  </Button>
+
+                  <div className="text-center">
+                    <h2 className="text-2xl font-bold font-display text-primary">Hole {currentHole}</h2>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
+                      <span>Par {currentHoleData.par}</span>
+                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                      <span>SI {currentHoleData.strokeIndex}</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setUnsavedWarningShown(false);
+                      setCurrentHole(Math.min(18, currentHole + 1));
+                    }}
+                    disabled={currentHole === 18}
+                  >
+                    <ChevronRight className="w-6 h-6 text-slate-400" />
+                  </Button>
+                </div>
+
                 {/* Player Cards */}
                 <div className="space-y-3">
                   {playersInGroup.map(player => {
@@ -605,10 +605,7 @@ export default function Scoring() {
                                 className="w-4 h-4 rounded-full"
                                 style={{ backgroundColor: player.team?.color || "#999" }}
                               />
-                              <div>
-                                <div className="font-semibold">{player.name}</div>
-                                <div className="text-xs text-slate-600">{player.team?.name}</div>
-                              </div>
+                              <div className="font-semibold">{player.name}</div>
                             </div>
                             {existingPlayerScore && !playerUnsaved && (
                               <div className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold">
@@ -618,98 +615,94 @@ export default function Scoring() {
                           </div>
 
                           {/* Score Input */}
-                          {playerUnsaved || !existingPlayerScore ? (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-3">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-10 w-10 rounded-lg border-2 text-lg font-light"
-                                  onClick={() => {
-                                    const newStrokes = Math.max(1, (playerUnsaved?.strokes || currentScore || 4) - 1);
-                                    setGroupScores(prev => ({
-                                      ...prev,
-                                      [selectedGroupNumber]: {
-                                        ...prev[selectedGroupNumber],
-                                        [player.id]: {
-                                          strokes: newStrokes,
-                                          isPick9: playerUnsaved?.isPick9 || false
-                                        }
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-10 w-10 rounded-lg border-2 text-lg font-light"
+                                onClick={() => {
+                                  const newStrokes = Math.max(1, (playerUnsaved?.strokes || currentScore || 4) - 1);
+                                  setGroupScores(prev => ({
+                                    ...prev,
+                                    [selectedGroupNumber]: {
+                                      ...prev[selectedGroupNumber],
+                                      [player.id]: {
+                                        strokes: newStrokes,
+                                        isPick9: playerUnsaved?.isPick9 || false
                                       }
-                                    }));
-                                  }}
-                                >
-                                  -
-                                </Button>
+                                    }
+                                  }));
+                                }}
+                              >
+                                -
+                              </Button>
 
-                                <div className={clsx(
-                                  "flex-1 text-center font-bold text-xl",
-                                  getScoreColor(playerUnsaved?.strokes || currentScore || 4, currentHoleData.par)
-                                )}>
-                                  {playerUnsaved?.strokes || currentScore || "-"}
-                                </div>
-
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-10 w-10 rounded-lg border-2 text-lg font-light"
-                                  onClick={() => {
-                                    const newStrokes = Math.min(15, (playerUnsaved?.strokes || currentScore || 4) + 1);
-                                    setGroupScores(prev => ({
-                                      ...prev,
-                                      [selectedGroupNumber]: {
-                                        ...prev[selectedGroupNumber],
-                                        [player.id]: {
-                                          strokes: newStrokes,
-                                          isPick9: playerUnsaved?.isPick9 || false
-                                        }
-                                      }
-                                    }));
-                                  }}
-                                >
-                                  +
-                                </Button>
+                              <div className={clsx(
+                                "flex-1 text-center font-bold text-xl",
+                                getScoreColor(playerUnsaved?.strokes || currentScore || 4, currentHoleData.par)
+                              )}>
+                                {playerUnsaved?.strokes || currentScore || "-"}
                               </div>
 
-                              {roundDetails?.formatType === "pick_9" && (
-                                <div className="flex items-center justify-between text-xs px-2">
-                                  <span>Pick 9?</span>
-                                  <Switch
-                                    checked={playerUnsaved?.isPick9 || false}
-                                    onCheckedChange={(checked) => {
-                                      setGroupScores(prev => ({
-                                        ...prev,
-                                        [selectedGroupNumber]: {
-                                          ...prev[selectedGroupNumber],
-                                          [player.id]: {
-                                            strokes: playerUnsaved?.strokes || currentScore || 4,
-                                            isPick9: checked
-                                          }
-                                        }
-                                      }));
-                                    }}
-                                  />
-                                </div>
-                              )}
-
                               <Button
+                                variant="outline"
                                 size="sm"
-                                className="w-full"
-                                onClick={() => handleGroupPlayerScoreSubmit(player.id)}
-                                disabled={submitScore.isPending}
+                                className="h-10 w-10 rounded-lg border-2 text-lg font-light"
+                                onClick={() => {
+                                  const newStrokes = Math.min(15, (playerUnsaved?.strokes || currentScore || 4) + 1);
+                                  setGroupScores(prev => ({
+                                    ...prev,
+                                    [selectedGroupNumber]: {
+                                      ...prev[selectedGroupNumber],
+                                      [player.id]: {
+                                        strokes: newStrokes,
+                                        isPick9: playerUnsaved?.isPick9 || false
+                                      }
+                                    }
+                                  }));
+                                }}
                               >
-                                {submitScore.isPending ? (
-                                  <Loader2 className="w-3 h-3 animate-spin mr-2" />
-                                ) : (
-                                  "Save"
-                                )}
+                                +
                               </Button>
                             </div>
-                          ) : (
-                            <div className="text-xs text-slate-600 py-2">
-                              Score saved for this hole
-                            </div>
-                          )}
+
+                            {roundDetails?.formatType === "pick_9" && (
+                              <div className="flex items-center justify-between text-xs px-2">
+                                <span>Pick 9?</span>
+                                <Switch
+                                  checked={playerUnsaved?.isPick9 || false}
+                                  onCheckedChange={(checked) => {
+                                    setGroupScores(prev => ({
+                                      ...prev,
+                                      [selectedGroupNumber]: {
+                                        ...prev[selectedGroupNumber],
+                                        [player.id]: {
+                                          strokes: playerUnsaved?.strokes || currentScore || 4,
+                                          isPick9: checked
+                                        }
+                                      }
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              onClick={() => handleGroupPlayerScoreSubmit(player.id)}
+                              disabled={submitScore.isPending || (existingPlayerScore && !playerUnsaved && playerUnsaved?.strokes === existingPlayerScore.grossScore)}
+                            >
+                              {submitScore.isPending ? (
+                                <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                              ) : existingPlayerScore && !playerUnsaved ? (
+                                "Edit"
+                              ) : (
+                                "Save"
+                              )}
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     );
