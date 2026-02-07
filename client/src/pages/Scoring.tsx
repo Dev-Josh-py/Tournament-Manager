@@ -36,7 +36,7 @@ export default function Scoring() {
   const { data: roundDetails } = useRound(Number(selectedRoundId));
   const { data: existingScores } = useScores(Number(selectedRoundId));
   const { data: roundHandicaps } = useRoundHandicaps(Number(selectedRoundId));
-  const { data: groupings } = useRoundGroupings(Number(selectedRoundId));
+  const { data: groupings, isLoading: groupingsLoading } = useRoundGroupings(Number(selectedRoundId));
 
   const submitScore = useSubmitScore();
   const { toast } = useToast();
@@ -287,6 +287,35 @@ export default function Scoring() {
           {/* STEP 2: SELECT GROUP OR PLAYER */}
           {currentStep === 'selectGroup' && selectedRoundId && (() => {
             const selectedRound = rounds?.find(r => String(r.id) === selectedRoundId);
+
+            // Show loading state while groupings are being fetched
+            if (groupingsLoading) {
+              return (
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" onClick={handleBackToRoundSelection}>
+                      <ChevronLeft className="w-4 h-4 mr-1" />
+                      Back
+                    </Button>
+                    <h2 className="text-2xl font-bold">Loading...</h2>
+                  </div>
+                  <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                    <CardContent className="p-3">
+                      <div className="text-sm text-muted-foreground">Selected Round:</div>
+                      <div className="font-semibold">
+                        Round {selectedRound?.roundNumber} - {selectedRound?.course.name}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-8 flex justify-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            }
+
             return (
               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center gap-2">
