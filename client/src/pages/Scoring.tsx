@@ -273,7 +273,7 @@ export default function Scoring() {
                       <div className="text-xl font-bold font-display text-slate-900 dark:text-slate-50 mt-2 mb-3">{round.course.name}</div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span>📅</span>
-                        <span>{format(new Date(round.date), "EEEE MMM d (a)")}</span>
+                        <span>{format(new Date(round.date), "EEEE MMM d, yyyy (a)")}</span>
                       </div>
                       {round.description && (
                         <div className="text-sm mt-3 text-slate-600">{round.description}</div>
