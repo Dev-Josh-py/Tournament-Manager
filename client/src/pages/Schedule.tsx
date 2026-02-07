@@ -105,7 +105,7 @@ export default function Schedule() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex flex-col gap-2 mt-4 md:flex-row">
                     <Link href={`/round-setup?round=${round.id}`} className="flex-1">
                       <Button variant="outline" size="sm" className="w-full">
                         <Settings className="w-4 h-4 mr-2" />
