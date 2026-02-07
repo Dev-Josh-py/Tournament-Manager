@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useRounds, usePlayers, useRoundGroupings, useUpsertGroupings, useDeleteGroupings } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
@@ -18,7 +18,6 @@ interface GroupFormData {
 }
 
 export default function GroupingSetup() {
-  const navigate = useNavigate();
   const [location] = useLocation();
   const [selectedRoundId, setSelectedRoundId] = useState<string>("");
   const [groups, setGroups] = useState<GroupFormData[]>([]);
