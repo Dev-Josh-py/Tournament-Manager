@@ -73,21 +73,6 @@ export default function Scoring() {
     );
   }, [isGroupMode, existingScores, selectedPlayerId]);
 
-  // Group mode: check for unsaved scores when advancing hole
-  useEffect(() => {
-    if (isGroupMode && currentGrouping && existingScores) {
-      const hasUnsaved = playersInGroup.some(player => {
-        const playerGroupScore = groupScores[selectedGroupNumber]?.[player.id];
-        if (!playerGroupScore) return false; // No unsaved score
-        return true; // Has unsaved score
-      });
-      if (hasUnsaved) {
-        setUnsavedWarningShown(true);
-      }
-    }
-  }, [currentHole, isGroupMode, currentGrouping, selectedGroupNumber, playersInGroup, groupScores, existingScores]);
-
-  const [unsavedWarningShown, setUnsavedWarningShown] = useState(false);
 
   const handleScoreSubmit = async () => {
     if (!selectedRoundId) return;
@@ -161,50 +146,50 @@ export default function Scoring() {
     }
   };
 
-  const handleSaveHole = async () => {
+  const handleNextHole = async () => {
     if (!selectedRoundId || !selectedGroupNumber) return;
 
     const groupScoresForHole = groupScores[selectedGroupNumber];
-    if (!groupScoresForHole || Object.keys(groupScoresForHole).length === 0) {
-      toast({
-        title: "No Changes",
-        description: "All scores for this hole are already saved.",
-      });
-      return;
-    }
 
     try {
-      // Submit all unsaved scores for this hole
-      const promises = Object.entries(groupScoresForHole).map(([playerId, score]) =>
-        submitScore.mutateAsync({
-          roundId: Number(selectedRoundId),
-          playerId: Number(playerId),
-          holeNumber: currentHole,
-          grossScore: score.strokes,
-          isPick9: score.isPick9
-        })
-      );
+      // Save any unsaved scores for current hole
+      if (groupScoresForHole && Object.keys(groupScoresForHole).length > 0) {
+        const promises = Object.entries(groupScoresForHole).map(([playerId, score]) =>
+          submitScore.mutateAsync({
+            roundId: Number(selectedRoundId),
+            playerId: Number(playerId),
+            holeNumber: currentHole,
+            grossScore: score.strokes,
+            isPick9: score.isPick9
+          })
+        );
 
-      await Promise.all(promises);
+        await Promise.all(promises);
 
-      toast({
-        title: "Hole Saved",
-        description: `All scores for Hole ${currentHole} saved successfully.`,
-        variant: "default",
-      });
+        // Clear all unsaved scores for this group
+        setGroupScores(prev => {
+          const updated = { ...prev };
+          updated[selectedGroupNumber] = {};
+          return updated;
+        });
+      }
 
-      // Clear all unsaved scores for this group
-      setGroupScores(prev => {
-        const updated = { ...prev };
-        updated[selectedGroupNumber] = {};
-        return updated;
-      });
+      // Advance to next hole
+      if (currentHole < 18) {
+        setCurrentHole(prev => prev + 1);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to save hole",
         variant: "destructive",
       });
+    }
+  };
+
+  const handlePrevHole = () => {
+    if (currentHole > 1) {
+      setCurrentHole(prev => prev - 1);
     }
   };
 
@@ -229,7 +214,6 @@ export default function Scoring() {
     return (
       <button
         onClick={() => {
-          setUnsavedWarningShown(false);
           setCurrentHole(holeNumber);
         }}
         aria-label={`Hole ${holeNumber}${isScored ? " (scored)" : ""}`}
@@ -302,7 +286,6 @@ export default function Scoring() {
                 <Label className="text-xs text-muted-foreground ml-1">Group</Label>
                 <Select value={String(selectedGroupNumber)} onValueChange={(val) => {
                   setSelectedGroupNumber(Number(val));
-                  setUnsavedWarningShown(false);
                 }}>
                   <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700">
                     <SelectValue placeholder="Select Group" />
@@ -349,23 +332,6 @@ export default function Scoring() {
 
             return null;
           })()}
-
-          {/* Unsaved warning for group mode */}
-          {isGroupMode && unsavedWarningShown && (
-            <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-900">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <AlertCircle className="w-5 h-5 text-amber-600" />
-                  <div className="font-bold text-amber-900 dark:text-amber-100">
-                    Unsaved Scores
-                  </div>
-                </div>
-                <p className="text-sm text-amber-800 dark:text-amber-200">
-                  One or more players in this group have unsaved scores for this hole. You can proceed to the next hole.
-                </p>
-              </CardContent>
-            </Card>
-          )}
 
           {/* SINGLE PLAYER MODE */}
           {selectedRoundId && !isGroupMode && selectedPlayerId && currentHoleData && roundHandicaps?.every(h => h.courseHandicap !== null) && (() => {
@@ -532,7 +498,6 @@ export default function Scoring() {
                       const prevGroup = groupings?.find(g => g.groupNumber === selectedGroupNumber - 1);
                       if (prevGroup) {
                         setSelectedGroupNumber(prevGroup.groupNumber);
-                        setUnsavedWarningShown(false);
                       }
                     }}
                     disabled={selectedGroupNumber === 1}
@@ -552,7 +517,6 @@ export default function Scoring() {
                       const nextGroup = groupings?.find(g => g.groupNumber === selectedGroupNumber + 1);
                       if (nextGroup) {
                         setSelectedGroupNumber(nextGroup.groupNumber);
-                        setUnsavedWarningShown(false);
                       }
                     }}
                     disabled={selectedGroupNumber === groupings?.length}
@@ -606,7 +570,6 @@ export default function Scoring() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setUnsavedWarningShown(false);
                       setCurrentHole(Math.max(1, currentHole - 1));
                     }}
                     disabled={currentHole === 1}
@@ -627,7 +590,6 @@ export default function Scoring() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setUnsavedWarningShown(false);
                       setCurrentHole(Math.min(18, currentHole + 1));
                     }}
                     disabled={currentHole === 18}
@@ -725,25 +687,38 @@ export default function Scoring() {
                   </CardContent>
                 </Card>
 
-                {/* Save Hole Button */}
-                <Button
-                  onClick={handleSaveHole}
-                  size="lg"
-                  className="w-full h-12 text-base font-bold shadow-xl bg-gradient-to-r from-primary to-emerald-700 hover:to-emerald-800 transition-all active:scale-[0.98]"
-                  disabled={submitScore.isPending || Object.keys(groupScores[selectedGroupNumber] || {}).length === 0}
-                >
-                  {submitScore.isPending ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-5 h-5 mr-2" />
-                      Save Hole
-                    </>
-                  )}
-                </Button>
+                {/* Navigation Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handlePrevHole}
+                    size="lg"
+                    className="flex-1 h-12 text-base font-bold shadow-md"
+                    variant="outline"
+                    disabled={currentHole === 1}
+                  >
+                    <ChevronLeft className="w-5 h-5 mr-2" />
+                    Prev Hole
+                  </Button>
+
+                  <Button
+                    onClick={handleNextHole}
+                    size="lg"
+                    className="flex-1 h-12 text-base font-bold shadow-xl bg-gradient-to-r from-primary to-emerald-700 hover:to-emerald-800 transition-all active:scale-[0.98]"
+                    disabled={submitScore.isPending || currentHole === 18}
+                  >
+                    {submitScore.isPending ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        Next Hole
+                        <ChevronRight className="w-5 h-5 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </div>
 
               </div>
             );
