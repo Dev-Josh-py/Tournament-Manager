@@ -270,10 +270,13 @@ export default function Scoring() {
                   >
                     <CardContent className="p-4">
                       <div className="text-lg font-bold">Round {round.roundNumber}</div>
-                      <div className="text-sm text-muted-foreground">{round.course.name}</div>
-                      <div className="text-xs text-slate-500 mt-1">{format(new Date(round.date), "MMM d, yyyy h:mm a")}</div>
+                      <div className="text-xl font-bold font-display text-slate-900 dark:text-slate-50 mt-2 mb-3">{round.course.name}</div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>📅</span>
+                        <span>{format(new Date(round.date), "EEEE MMM d (a)")}</span>
+                      </div>
                       {round.description && (
-                        <div className="text-sm mt-2 text-slate-600">{round.description}</div>
+                        <div className="text-sm mt-3 text-slate-600">{round.description}</div>
                       )}
                     </CardContent>
                   </Card>
