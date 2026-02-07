@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, ChevronLeft, ChevronRight, Hash, ClipboardEdit, AlertCircle, Settings, Check } from "lucide-react";
+import { Loader2, CheckCircle, ChevronLeft, ChevronRight, Hash, ClipboardEdit, AlertCircle, Settings, Check, Calendar, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { clsx } from "clsx";
 
@@ -262,22 +262,37 @@ export default function Scoring() {
                 {rounds?.map(round => (
                   <Card
                     key={round.id}
-                    className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary"
+                    className="overflow-hidden border-border/50 shadow-md cursor-pointer hover:shadow-lg transition-all"
                     onClick={() => {
                       setSelectedRoundId(String(round.id));
                       setCurrentStep('selectGroup');
                     }}
                   >
-                    <CardContent className="p-4">
-                      <div className="text-lg font-bold">Round {round.roundNumber}</div>
-                      <div className="text-xl font-bold font-display text-slate-900 dark:text-slate-50 mt-2 mb-3">{round.course.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {format(new Date(round.date), "EEEE MMM d, yyyy (a)")}
+                    <div className="h-2 bg-primary/20 w-full" />
+                    <div className="p-4 space-y-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex gap-2">
+                          <Badge variant="outline" className="font-mono text-xs uppercase tracking-wider">
+                            Round {round.roundNumber}
+                          </Badge>
+                        </div>
+                        {round.isCompleted ? (
+                          <Badge className="bg-slate-200 text-slate-600 hover:bg-slate-300">Completed</Badge>
+                        ) : (
+                          <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">Upcoming</Badge>
+                        )}
+                      </div>
+                      <div className="text-xl font-display font-bold">
+                        {round.course.name}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4" />
+                        <span>{format(new Date(round.date), "EEEE MMM d, yyyy (a)")}</span>
                       </div>
                       {round.description && (
-                        <div className="text-sm mt-3 text-slate-600">{round.description}</div>
+                        <div className="text-sm text-slate-600">{round.description}</div>
                       )}
-                    </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>
