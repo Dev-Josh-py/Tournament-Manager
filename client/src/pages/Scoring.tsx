@@ -10,7 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, ChevronLeft, ChevronRight, Hash, ClipboardEdit, AlertCircle, Settings } from "lucide-react";
+import { Loader2, CheckCircle, ChevronLeft, ChevronRight, Hash, ClipboardEdit, AlertCircle, Settings, Check } from "lucide-react";
 import { clsx } from "clsx";
 
 export default function Scoring() {
@@ -156,6 +156,53 @@ export default function Scoring() {
       toast({
         title: "Error",
         description: error.message || "Failed to submit score",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveHole = async () => {
+    if (!selectedRoundId || !selectedGroupNumber) return;
+
+    const groupScoresForHole = groupScores[selectedGroupNumber];
+    if (!groupScoresForHole || Object.keys(groupScoresForHole).length === 0) {
+      toast({
+        title: "No Changes",
+        description: "All scores for this hole are already saved.",
+      });
+      return;
+    }
+
+    try {
+      // Submit all unsaved scores for this hole
+      const promises = Object.entries(groupScoresForHole).map(([playerId, score]) =>
+        submitScore.mutateAsync({
+          roundId: Number(selectedRoundId),
+          playerId: Number(playerId),
+          holeNumber: currentHole,
+          grossScore: score.strokes,
+          isPick9: score.isPick9
+        })
+      );
+
+      await Promise.all(promises);
+
+      toast({
+        title: "Hole Saved",
+        description: `All scores for Hole ${currentHole} saved successfully.`,
+        variant: "default",
+      });
+
+      // Clear all unsaved scores for this group
+      setGroupScores(prev => {
+        const updated = { ...prev };
+        updated[selectedGroupNumber] = {};
+        return updated;
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save hole",
         variant: "destructive",
       });
     }
@@ -599,6 +646,8 @@ export default function Scoring() {
                         const currentScore = playerUnsaved?.strokes || (existingPlayerScore?.grossScore) || 0;
                         const scoreColor = getScoreColor(currentScore, currentHoleData.par);
 
+                        const isSaved = existingPlayerScore && !playerUnsaved;
+
                         return (
                           <div key={player.id} className="p-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition">
                             {/* Player Info */}
@@ -608,7 +657,12 @@ export default function Scoring() {
                                 style={{ backgroundColor: player.team?.color || "#999" }}
                               />
                               <div className="min-w-0">
-                                <div className="text-sm font-semibold truncate">{player.name}</div>
+                                <div className="flex items-center gap-1">
+                                  <div className="text-sm font-semibold truncate">{player.name}</div>
+                                  {isSaved && (
+                                    <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                  )}
+                                </div>
                                 <div className="text-xs text-slate-500 truncate">HCP {player.handicap}</div>
                               </div>
                             </div>
@@ -663,24 +717,6 @@ export default function Scoring() {
                               >
                                 +
                               </Button>
-
-                              <Button
-                                size="sm"
-                                variant={playerUnsaved ? "default" : "outline"}
-                                className="text-xs h-8 px-2 ml-1"
-                                onClick={() => handleGroupPlayerScoreSubmit(player.id)}
-                                disabled={submitScore.isPending}
-                              >
-                                {submitScore.isPending ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : playerUnsaved ? (
-                                  "✓"
-                                ) : existingPlayerScore ? (
-                                  "✓"
-                                ) : (
-                                  "−"
-                                )}
-                              </Button>
                             </div>
                           </div>
                         );
@@ -688,6 +724,26 @@ export default function Scoring() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Save Hole Button */}
+                <Button
+                  onClick={handleSaveHole}
+                  size="lg"
+                  className="w-full h-12 text-base font-bold shadow-xl bg-gradient-to-r from-primary to-emerald-700 hover:to-emerald-800 transition-all active:scale-[0.98]"
+                  disabled={submitScore.isPending || Object.keys(groupScores[selectedGroupNumber] || {}).length === 0}
+                >
+                  {submitScore.isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-5 h-5 mr-2" />
+                      Save Hole
+                    </>
+                  )}
+                </Button>
 
               </div>
             );
