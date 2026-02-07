@@ -197,6 +197,57 @@ export default function Scoring() {
     }
   };
 
+  const handleFinish = async () => {
+    if (!selectedRoundId) return;
+
+    try {
+      // For single player mode: save the final score
+      if (!isGroupMode && selectedPlayerId) {
+        await submitScore.mutateAsync({
+          roundId: Number(selectedRoundId),
+          playerId: Number(selectedPlayerId),
+          holeNumber: currentHole,
+          grossScore: strokes,
+          isPick9: isPick9
+        });
+      }
+      // For group mode: save any unsaved scores
+      else if (isGroupMode && selectedGroupNumber > 0) {
+        const groupScoresForHole = groupScores[selectedGroupNumber];
+        if (groupScoresForHole && Object.keys(groupScoresForHole).length > 0) {
+          const promises = Object.entries(groupScoresForHole).map(([playerId, score]) =>
+            submitScore.mutateAsync({
+              roundId: Number(selectedRoundId),
+              playerId: Number(playerId),
+              holeNumber: currentHole,
+              grossScore: score.strokes,
+              isPick9: score.isPick9
+            })
+          );
+          await Promise.all(promises);
+        }
+      }
+
+      toast({
+        title: "Round Completed",
+        description: "All scores have been saved.",
+        variant: "default",
+      });
+
+      // Return to round selection screen
+      setSelectedGroupNumber(0);
+      setSelectedPlayerId("");
+      setCurrentHole(1);
+      setCurrentStep('selectRound');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to complete round",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleBackToRoundSelection = () => {
     setSelectedGroupNumber(0);
     setSelectedPlayerId("");
@@ -628,11 +679,16 @@ export default function Scoring() {
                 <Button
                   size="lg"
                   className="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20 bg-gradient-to-r from-primary to-emerald-700 hover:to-emerald-800 transition-all active:scale-[0.98]"
-                  onClick={handleScoreSubmit}
+                  onClick={currentHole === 18 ? handleFinish : handleScoreSubmit}
                   disabled={submitScore.isPending}
                 >
                   {submitScore.isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  ) : currentHole === 18 ? (
+                    <>
+                      Finish
+                      <CheckCircle2 className="w-5 h-5 ml-2" />
+                    </>
                   ) : (
                     "Save Score"
                   )}
@@ -844,15 +900,20 @@ export default function Scoring() {
                   </Button>
 
                   <Button
-                    onClick={handleNextHole}
+                    onClick={currentHole === 18 ? handleFinish : handleNextHole}
                     size="lg"
                     className="flex-1 h-12 text-base font-bold shadow-xl bg-gradient-to-r from-primary to-emerald-700 hover:to-emerald-800 transition-all active:scale-[0.98]"
-                    disabled={submitScore.isPending || currentHole === 18}
+                    disabled={submitScore.isPending}
                   >
                     {submitScore.isPending ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin mr-2" />
                         Saving...
+                      </>
+                    ) : currentHole === 18 ? (
+                      <>
+                        Finish
+                        <CheckCircle2 className="w-5 h-5 ml-2" />
                       </>
                     ) : (
                       <>
