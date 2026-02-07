@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,9 @@ import { Loader2, CheckCircle, ChevronLeft, ChevronRight, Hash, ClipboardEdit, A
 import { clsx } from "clsx";
 
 export default function Scoring() {
+  // Step navigation state
+  const [currentStep, setCurrentStep] = useState<'selectRound' | 'selectGroup' | 'scoring'>('selectRound');
+
   // General state
   const [selectedRoundId, setSelectedRoundId] = useState<string>("");
   const [currentHole, setCurrentHole] = useState<number>(1);
@@ -193,6 +196,18 @@ export default function Scoring() {
     }
   };
 
+  const handleBackToRoundSelection = () => {
+    setSelectedGroupNumber(0);
+    setSelectedPlayerId("");
+    setCurrentHole(1);
+    setCurrentStep('selectRound');
+  };
+
+  const handleBackToGroupSelection = () => {
+    setCurrentHole(1);
+    setCurrentStep('selectGroup');
+  };
+
   const getScoreColor = (score: number, par: number) => {
     const diff = score - par;
     if (diff <= -2) return "text-amber-500";
@@ -238,69 +253,135 @@ export default function Scoring() {
       <PageTransition>
         <main className="max-w-md mx-auto px-4 space-y-6">
 
-          {/* Selectors */}
-          <div className="grid grid-cols-2 gap-3 relative z-20">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground ml-1">Round</Label>
-              <Select value={selectedRoundId} onValueChange={(val) => {
-                setSelectedRoundId(val);
-                setSelectedPlayerId("");
-                setSelectedGroupNumber(0);
-                setCurrentHole(1);
-              }}>
-                <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700">
-                  <SelectValue placeholder="Select Round" />
-                </SelectTrigger>
-                <SelectContent className="z-[100] bg-white dark:bg-slate-800 dark:border-slate-700 backdrop-blur-sm">
-                  {rounds?.map((r) => (
-                    <SelectItem key={r.id} value={String(r.id)}>
-                      R{r.roundNumber}: {r.course.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* STEP 1: SELECT ROUND */}
+          {currentStep === 'selectRound' && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <h2 className="text-2xl font-bold">Select Round</h2>
+              <div className="grid grid-cols-1 gap-3">
+                {rounds?.map(round => (
+                  <Card
+                    key={round.id}
+                    className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary"
+                    onClick={() => {
+                      setSelectedRoundId(String(round.id));
+                      setCurrentStep('selectGroup');
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="text-lg font-bold">Round {round.roundNumber}</div>
+                      <div className="text-sm text-muted-foreground">{round.course.name}</div>
+                      <div className="text-xs text-slate-500 mt-1">{new Date(round.date).toLocaleDateString()}</div>
+                      {round.description && (
+                        <div className="text-sm mt-2 text-slate-600">{round.description}</div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
+          )}
 
-            {/* Single player mode selector */}
-            {selectedRoundId && !isGroupMode && (
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground ml-1">Player</Label>
-                <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
-                  <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 disabled:opacity-50" disabled={!selectedRoundId}>
-                    <SelectValue placeholder="Select Player" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[100] bg-white dark:bg-slate-800 dark:border-slate-700 backdrop-blur-sm">
-                    {players?.map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          {/* STEP 2: SELECT GROUP OR PLAYER */}
+          {currentStep === 'selectGroup' && selectedRoundId && (() => {
+            const selectedRound = rounds?.find(r => String(r.id) === selectedRoundId);
+            return (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={handleBackToRoundSelection}>
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Back
+                  </Button>
+                  <h2 className="text-2xl font-bold">{isGroupMode ? 'Select Group' : 'Select Player'}</h2>
+                </div>
 
-            {/* Group mode selector */}
-            {selectedRoundId && isGroupMode && (
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground ml-1">Group</Label>
-                <Select value={String(selectedGroupNumber)} onValueChange={(val) => {
-                  setSelectedGroupNumber(Number(val));
-                }}>
-                  <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700">
-                    <SelectValue placeholder="Select Group" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[100] bg-white dark:bg-slate-800 dark:border-slate-700 backdrop-blur-sm">
-                    {groupings?.map((g) => (
-                      <SelectItem key={g.id} value={String(g.groupNumber)}>
-                        Group {g.groupNumber} {g.players.length} player{g.players.length !== 1 ? 's' : ''}
-                      </SelectItem>
+                {/* Show selected round info */}
+                <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                  <CardContent className="p-3">
+                    <div className="text-sm text-muted-foreground">Selected Round:</div>
+                    <div className="font-semibold">
+                      Round {selectedRound?.roundNumber} - {selectedRound?.course.name}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Group mode: show group cards */}
+                {isGroupMode && (
+                  <div className="grid grid-cols-1 gap-3">
+                    {groupings?.map(grouping => {
+                      const groupPlayers = grouping.players
+                        .map(p => players?.find(pl => pl.id === p.playerId))
+                        .filter(Boolean);
+                      return (
+                        <Card
+                          key={grouping.id}
+                          className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary"
+                          onClick={() => {
+                            setSelectedGroupNumber(grouping.groupNumber);
+                            setCurrentStep('scoring');
+                          }}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-lg font-bold">Group {grouping.groupNumber}</div>
+                              <Badge variant="secondary">{groupPlayers.length} player{groupPlayers.length !== 1 ? 's' : ''}</Badge>
+                            </div>
+                            {grouping.groupName && (
+                              <div className="text-sm text-muted-foreground mb-2">{grouping.groupName}</div>
+                            )}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {groupPlayers.map(player => (
+                                player && (
+                                  <div key={player.id} className="flex items-center gap-1">
+                                    <div
+                                      className="w-3 h-3 rounded-full"
+                                      style={{ backgroundColor: player.team?.color || "#999" }}
+                                    />
+                                    <span className="text-sm">{player.name}</span>
+                                  </div>
+                                )
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Single player mode: show player cards */}
+                {!isGroupMode && (
+                  <div className="grid grid-cols-1 gap-3">
+                    {players?.map(player => (
+                      <Card
+                        key={player.id}
+                        className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary"
+                        onClick={() => {
+                          setSelectedPlayerId(String(player.id));
+                          setCurrentStep('scoring');
+                        }}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-4 h-4 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: player.team?.color || "#999" }}
+                            />
+                            <div className="flex-1">
+                              <div className="text-lg font-bold">{player.name}</div>
+                              <div className="text-sm text-muted-foreground">Handicap {player.handicap}</div>
+                            </div>
+                            {player.team && (
+                              <Badge variant="outline">{player.team.name}</Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Handicap validation */}
           {selectedRoundId && roundHandicaps && (() => {
@@ -333,12 +414,34 @@ export default function Scoring() {
             return null;
           })()}
 
-          {/* SINGLE PLAYER MODE */}
-          {selectedRoundId && !isGroupMode && selectedPlayerId && currentHoleData && roundHandicaps?.every(h => h.courseHandicap !== null) && (() => {
+          {/* STEP 3: INPUT SCORES - SINGLE PLAYER MODE */}
+          {currentStep === 'scoring' && selectedRoundId && !isGroupMode && selectedPlayerId && currentHoleData && roundHandicaps?.every(h => h.courseHandicap !== null) && (() => {
             const currentPlayerHandicap = roundHandicaps?.find(h => h.playerId === Number(selectedPlayerId));
+            const selectedRound = rounds?.find(r => String(r.id) === selectedRoundId);
+            const selectedPlayer = players?.find(p => String(p.id) === selectedPlayerId);
 
             return (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+                {/* Back button and context */}
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={handleBackToGroupSelection}>
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Back
+                  </Button>
+                </div>
+
+                {/* Show selected round and player info */}
+                <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                  <CardContent className="p-3">
+                    <div className="text-sm text-muted-foreground">
+                      Round {selectedRound?.roundNumber} - {selectedRound?.course.name}
+                    </div>
+                    <div className="font-semibold">
+                      {selectedPlayer?.name}
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Course Handicap Display */}
                 {currentPlayerHandicap && (
@@ -484,46 +587,31 @@ export default function Scoring() {
             );
           })()}
 
-          {/* GROUP MODE */}
-          {selectedRoundId && isGroupMode && selectedGroupNumber > 0 && currentHoleData && roundHandicaps?.every(h => h.courseHandicap !== null) && (() => {
+          {/* STEP 3: INPUT SCORES - GROUP MODE */}
+          {currentStep === 'scoring' && selectedRoundId && isGroupMode && selectedGroupNumber > 0 && currentHoleData && roundHandicaps?.every(h => h.courseHandicap !== null) && (() => {
+            const selectedRound = rounds?.find(r => String(r.id) === selectedRoundId);
             return (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-                {/* Group Navigation */}
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const prevGroup = groupings?.find(g => g.groupNumber === selectedGroupNumber - 1);
-                      if (prevGroup) {
-                        setSelectedGroupNumber(prevGroup.groupNumber);
-                      }
-                    }}
-                    disabled={selectedGroupNumber === 1}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-
-                  <div className="text-center">
-                    <p className="font-bold">Group {selectedGroupNumber} of {groupings?.length}</p>
-                    <p className="text-xs text-slate-600">{playersInGroup.length} player{playersInGroup.length !== 1 ? 's' : ''}</p>
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const nextGroup = groupings?.find(g => g.groupNumber === selectedGroupNumber + 1);
-                      if (nextGroup) {
-                        setSelectedGroupNumber(nextGroup.groupNumber);
-                      }
-                    }}
-                    disabled={selectedGroupNumber === groupings?.length}
-                  >
-                    <ChevronRight className="w-4 h-4" />
+                {/* Back button and context */}
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={handleBackToGroupSelection}>
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Back
                   </Button>
                 </div>
+
+                {/* Show selected round and group info */}
+                <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                  <CardContent className="p-3">
+                    <div className="text-sm text-muted-foreground">
+                      Round {selectedRound?.roundNumber} - {selectedRound?.course.name}
+                    </div>
+                    <div className="font-semibold">
+                      Group {selectedGroupNumber} - {currentGrouping?.groupName || `${playersInGroup.length} players`}
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Hole Selector Grid */}
                 <Card className="border-none shadow-sm bg-white">
@@ -724,7 +812,7 @@ export default function Scoring() {
             );
           })()}
 
-          {!selectedRoundId && (
+          {currentStep === 'selectRound' && !selectedRoundId && (
             <div className="text-center py-20 text-muted-foreground opacity-50 relative z-0">
               <div className="bg-slate-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ClipboardEdit className="w-8 h-8" />
