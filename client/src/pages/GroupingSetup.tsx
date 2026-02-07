@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useRounds, usePlayers, useRoundGroupings, useUpsertGroupings, useDeleteGroupings } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
@@ -31,7 +31,7 @@ export default function GroupingSetup() {
   const { toast } = useToast();
 
   // Parse round from URL params if present
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(location.split("?")[1] || "");
     const roundParam = params.get("round");
     if (roundParam) {
@@ -40,7 +40,7 @@ export default function GroupingSetup() {
   }, [location]);
 
   // Load existing groupings when round is selected
-  React.useEffect(() => {
+  useEffect(() => {
     if (Number(selectedRoundId) && existingGroupings) {
       const loadedGroups: GroupFormData[] = existingGroupings.map(g => ({
         groupNumber: g.groupNumber,
