@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle, ChevronLeft, ChevronRight, Hash, ClipboardEdit, AlertCircle, Settings, Check } from "lucide-react";
+import { format } from "date-fns";
 import { clsx } from "clsx";
 
 export default function Scoring() {
@@ -270,7 +271,7 @@ export default function Scoring() {
                     <CardContent className="p-4">
                       <div className="text-lg font-bold">Round {round.roundNumber}</div>
                       <div className="text-sm text-muted-foreground">{round.course.name}</div>
-                      <div className="text-xs text-slate-500 mt-1">{new Date(round.date).toLocaleDateString()}</div>
+                      <div className="text-xs text-slate-500 mt-1">{format(new Date(round.date), "MMM d, yyyy h:mm a")}</div>
                       {round.description && (
                         <div className="text-sm mt-2 text-slate-600">{round.description}</div>
                       )}
