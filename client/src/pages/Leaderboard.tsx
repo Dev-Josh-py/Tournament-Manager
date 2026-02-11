@@ -368,6 +368,28 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
     if (matchStatus === 0) return "All Square";
     if (matchStatus > 0) {
       if (matchStatus === holesRemaining) return `Dormie ${matchStatus}`;
+      if (matchStatus > holesRemaining) return `${player1Name} wins ${matchStatus} & ${holesRemaining}`;
+      return `${player1Name} ${matchStatus} Up`;
+    }
+    if (matchStatus < 0) {
+      const absStatus = Math.abs(matchStatus);
+      if (absStatus === holesRemaining) return `Dormie ${absStatus}`;
+      if (absStatus > holesRemaining) return `${player2Name} wins ${absStatus} & ${holesRemaining}`;
+      return `${player2Name} ${absStatus} Up`;
+    }
+    return "Not started";
+  };
+
+  const getCurrentStatus = () => {
+    if (holesRemaining === 0) {
+      if (matchStatus === 0) return "Match Tied";
+      if (matchStatus > 0) return `${player1Name} wins`;
+      return `${player2Name} wins`;
+    }
+
+    if (matchStatus === 0) return "All Square";
+    if (matchStatus > 0) {
+      if (matchStatus === holesRemaining) return `Dormie ${matchStatus}`;
       if (matchStatus > holesRemaining) return `${player1Name} wins`;
       return `${player1Name} ${matchStatus} Up`;
     }
@@ -389,7 +411,12 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-semibold text-slate-600">Match {pairing.matchNumber}</span>
-            <span className="text-sm font-bold text-slate-900">{getMatchStatusDisplay()}</span>
+            <div className="text-right">
+              <div className="text-sm font-bold text-slate-900">{getCurrentStatus()}</div>
+              <div className="text-xs text-slate-600 mt-0.5">
+                {holesRemaining === 0 ? getMatchStatusDisplay() : `Thru ${holesPlayed}`}
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
