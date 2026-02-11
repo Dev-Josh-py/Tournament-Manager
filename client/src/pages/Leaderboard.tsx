@@ -328,10 +328,13 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
     }
   });
 
-  // Calculate match status
+  // Calculate match status and detect when match was decided
   let player1HolesWon = 0;
   let player2HolesWon = 0;
   let holesHalved = 0;
+  let matchDecidedHole = -1;
+  let decidingMatchStatus = 0;
+  let decidingHolesRemaining = 0;
 
   for (let hole = 1; hole <= 18; hole++) {
     const p1Points = player1Scores[hole];
@@ -345,12 +348,30 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
       } else {
         holesHalved++;
       }
+
+      // Check if match is now decided
+      const currentMatchStatus = player1HolesWon - player2HolesWon;
+      const currentHolesRemaining = 18 - (player1HolesWon + player2HolesWon + holesHalved);
+
+      // Match is decided if one player's lead >= remaining holes
+      if (matchDecidedHole === -1 && (
+        currentMatchStatus >= currentHolesRemaining ||
+        -currentMatchStatus >= currentHolesRemaining
+      )) {
+        matchDecidedHole = hole;
+        decidingMatchStatus = currentMatchStatus;
+        decidingHolesRemaining = currentHolesRemaining;
+      }
     }
   }
 
   const matchStatus = player1HolesWon - player2HolesWon;
   const holesPlayed = player1HolesWon + player2HolesWon + holesHalved;
   const holesRemaining = 18 - holesPlayed;
+
+  // Use the match status at decision point if match was already decided
+  const finalMatchStatus = matchDecidedHole !== -1 ? decidingMatchStatus : matchStatus;
+  const finalHolesRemaining = matchDecidedHole !== -1 ? decidingHolesRemaining : holesRemaining;
 
   // Calculate total stableford
   const player1Total = Object.values(player1Scores).reduce((sum, pts) =>
@@ -359,44 +380,44 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
     sum + (pts !== null && pts !== undefined ? pts : 0), 0);
 
   const getMatchStatusDisplay = () => {
-    if (holesRemaining === 0) {
-      if (matchStatus === 0) return "Match Tied - All Square";
-      if (matchStatus > 0) return `${player1Name} wins ${matchStatus} & ${holesRemaining}`;
-      return `${player2Name} wins ${Math.abs(matchStatus)} & ${holesRemaining}`;
+    if (finalHolesRemaining === 0 || finalMatchStatus >= finalHolesRemaining || -finalMatchStatus >= finalHolesRemaining) {
+      if (finalMatchStatus === 0) return "Match Tied - All Square";
+      if (finalMatchStatus > 0) return `${player1Name} wins ${finalMatchStatus} & ${finalHolesRemaining}`;
+      return `${player2Name} wins ${Math.abs(finalMatchStatus)} & ${finalHolesRemaining}`;
     }
 
-    if (matchStatus === 0) return "All Square";
-    if (matchStatus > 0) {
-      if (matchStatus === holesRemaining) return `Dormie ${matchStatus}`;
-      if (matchStatus > holesRemaining) return `${player1Name} wins ${matchStatus} & ${holesRemaining}`;
-      return `${player1Name} ${matchStatus} Up`;
+    if (finalMatchStatus === 0) return "All Square";
+    if (finalMatchStatus > 0) {
+      if (finalMatchStatus === finalHolesRemaining) return `Dormie ${finalMatchStatus}`;
+      if (finalMatchStatus > finalHolesRemaining) return `${player1Name} wins ${finalMatchStatus} & ${finalHolesRemaining}`;
+      return `${player1Name} ${finalMatchStatus} Up`;
     }
-    if (matchStatus < 0) {
-      const absStatus = Math.abs(matchStatus);
-      if (absStatus === holesRemaining) return `Dormie ${absStatus}`;
-      if (absStatus > holesRemaining) return `${player2Name} wins ${absStatus} & ${holesRemaining}`;
+    if (finalMatchStatus < 0) {
+      const absStatus = Math.abs(finalMatchStatus);
+      if (absStatus === finalHolesRemaining) return `Dormie ${absStatus}`;
+      if (absStatus > finalHolesRemaining) return `${player2Name} wins ${absStatus} & ${finalHolesRemaining}`;
       return `${player2Name} ${absStatus} Up`;
     }
     return "Not started";
   };
 
   const getCurrentStatus = () => {
-    if (holesRemaining === 0) {
-      if (matchStatus === 0) return "Match Tied";
-      if (matchStatus > 0) return `${player1Name} wins`;
+    if (finalHolesRemaining === 0 || finalMatchStatus >= finalHolesRemaining || -finalMatchStatus >= finalHolesRemaining) {
+      if (finalMatchStatus === 0) return "Match Tied";
+      if (finalMatchStatus > 0) return `${player1Name} wins`;
       return `${player2Name} wins`;
     }
 
-    if (matchStatus === 0) return "All Square";
-    if (matchStatus > 0) {
-      if (matchStatus === holesRemaining) return `Dormie ${matchStatus}`;
-      if (matchStatus > holesRemaining) return `${player1Name} wins`;
-      return `${player1Name} ${matchStatus} Up`;
+    if (finalMatchStatus === 0) return "All Square";
+    if (finalMatchStatus > 0) {
+      if (finalMatchStatus === finalHolesRemaining) return `Dormie ${finalMatchStatus}`;
+      if (finalMatchStatus > finalHolesRemaining) return `${player1Name} wins`;
+      return `${player1Name} ${finalMatchStatus} Up`;
     }
-    if (matchStatus < 0) {
-      const absStatus = Math.abs(matchStatus);
-      if (absStatus === holesRemaining) return `Dormie ${absStatus}`;
-      if (absStatus > holesRemaining) return `${player2Name} wins`;
+    if (finalMatchStatus < 0) {
+      const absStatus = Math.abs(finalMatchStatus);
+      if (absStatus === finalHolesRemaining) return `Dormie ${absStatus}`;
+      if (absStatus > finalHolesRemaining) return `${player2Name} wins`;
       return `${player2Name} ${absStatus} Up`;
     }
     return "Not started";
@@ -414,7 +435,7 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
             <div className="text-right">
               <div className="text-sm font-bold text-slate-900">{getCurrentStatus()}</div>
               <div className="text-xs text-slate-600 mt-0.5">
-                {holesRemaining === 0 ? getMatchStatusDisplay() : `Thru ${holesPlayed}`}
+                {matchDecidedHole !== -1 ? getMatchStatusDisplay() : `Thru ${holesPlayed}`}
               </div>
             </div>
           </div>
