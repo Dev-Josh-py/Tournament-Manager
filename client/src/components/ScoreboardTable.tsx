@@ -86,7 +86,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                 {holeNumbers.map(h => (
                   <th key={h} className="px-1.5 py-2 text-center font-bold">{h}</th>
                 ))}
-                {!compact && <th className="px-1.5 py-2 text-center font-bold">{sectionLabel === 'FRONT 9' ? 'Out' : 'In'}</th>}
+                <th className="px-1.5 py-2 text-center font-bold">{sectionLabel === 'FRONT 9' ? 'Out' : 'In'}</th>
               </tr>
             </thead>
             <tbody>
@@ -101,24 +101,22 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                     </td>
                   );
                 })}
-                {!compact && <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{parOut}</td>}
+                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{parOut}</td>
               </tr>
 
-              {/* Stroke row - hidden in compact mode */}
-              {!compact && (
+              {/* Stroke row */}
               <tr className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                <td className="px-2 py-2 font-semibold text-slate-600 dark:text-slate-400">Stroke</td>
+                <td className="px-2 py-2 font-semibold text-slate-600 dark:text-slate-400 text-xs">Stroke</td>
                 {holeNumbers.map(h => {
                   const hole = getHole(h);
                   return (
-                    <td key={h} className="px-1.5 py-2 text-center text-slate-600 dark:text-slate-400">
+                    <td key={h} className="px-1.5 py-2 text-center text-slate-600 dark:text-slate-400 text-xs">
                       {hole?.strokeIndex || '-'}
                     </td>
                   );
                 })}
                 <td className="px-1.5 py-2 text-center text-slate-600 dark:text-slate-400">-</td>
               </tr>
-              )}
 
               {/* Score row */}
               <tr className="border-t border-slate-200 dark:border-slate-700">
@@ -141,9 +139,9 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                     </td>
                   );
                 })}
-                {!compact && <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">
+                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">
                   {scoreOut}
-                </td>}
+                </td>
               </tr>
 
               {/* Net row - hidden in compact mode */}
@@ -175,7 +173,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                     </td>
                   );
                 })}
-                {!compact && <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{ptsOut}</td>}
+                <td className="px-1.5 py-2 text-center font-bold text-slate-900 dark:text-slate-100">{ptsOut}</td>
               </tr>
             </tbody>
           </table>
