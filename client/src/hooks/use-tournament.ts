@@ -350,3 +350,136 @@ export function useDeleteGroupings() {
     },
   });
 }
+
+// ============================================
+// Match Pairings
+// ============================================
+
+export function useMatchPairings(roundId: number) {
+  return useQuery({
+    queryKey: [api.matchPairings.list.path, roundId],
+    queryFn: async () => {
+      const url = buildUrl(api.matchPairings.list.path, { roundId });
+      const res = await fetch(url, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error("Failed to fetch match pairings");
+      return api.matchPairings.list.responses[200].parse(await res.json());
+    },
+    enabled: !!roundId && roundId > 0,
+  });
+}
+
+export function useUpsertMatchPairings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      roundId,
+      pairings
+    }: {
+      roundId: number;
+      pairings: Array<{
+        matchNumber: number;
+        player1Id: number;
+        player2Id: number;
+      }>;
+    }) => {
+      const url = buildUrl(api.matchPairings.upsert.path, { roundId });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(pairings),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to save pairings");
+      }
+      return api.matchPairings.upsert.responses[200].parse(await res.json());
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [api.matchPairings.list.path, variables.roundId]
+      });
+      queryClient.invalidateQueries({
+        queryKey: [api.leaderboard.tournament.path]
+      });
+    },
+  });
+}
+
+export function useDeleteMatchPairings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (roundId: number) => {
+      const url = buildUrl(api.matchPairings.delete.path, { roundId });
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to delete match pairings");
+      return api.matchPairings.delete.responses[200].parse(await res.json());
+    },
+    onSuccess: (_, roundId) => {
+      queryClient.invalidateQueries({
+        queryKey: [api.matchPairings.list.path, roundId]
+      });
+    },
+  });
+}
+
+// ============================================
+// Pick 9 Assignments
+// ============================================
+
+export function usePick9Assignments(roundId: number) {
+  return useQuery({
+    queryKey: [api.pick9Assignments.list.path, roundId],
+    queryFn: async () => {
+      const url = buildUrl(api.pick9Assignments.list.path, { roundId });
+      const res = await fetch(url, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error("Failed to fetch pick 9 assignments");
+      return api.pick9Assignments.list.responses[200].parse(await res.json());
+    },
+    enabled: !!roundId && roundId > 0,
+  });
+}
+
+export function useUpsertPick9Assignments() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      roundId,
+      assignments
+    }: {
+      roundId: number;
+      assignments: Array<{
+        playerId: number;
+        holeRange: "1-9" | "10-18";
+      }>;
+    }) => {
+      const url = buildUrl(api.pick9Assignments.upsert.path, { roundId });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(assignments),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to save assignments");
+      }
+      return api.pick9Assignments.upsert.responses[200].parse(await res.json());
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [api.pick9Assignments.list.path, variables.roundId]
+      });
+      queryClient.invalidateQueries({
+        queryKey: [api.leaderboard.tournament.path]
+      });
+    },
+  });
+}

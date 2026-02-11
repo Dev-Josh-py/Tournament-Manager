@@ -38,9 +38,10 @@ export const rounds = pgTable("rounds", {
   courseId: integer("course_id").references(() => courses.id),
   roundNumber: integer("round_number").notNull(),
   date: text("date").notNull(), // Storing as string for display (e.g., "Saturday Feb 21")
-  formatType: text("format_type").notNull(), // 'individual_net', 'better_ball', 'combined_stableford', 'best_worst', 'pick_9', 'championship'
+  formatType: text("format_type").notNull(), // 'individual_net', 'individual_match_play', 'combined_stableford', 'best_worst', 'pick_9', 'championship'
   description: text("description").notNull(),
   isCompleted: boolean("is_completed").default(false),
+  awardsTeamPoints: boolean("awards_team_points").default(true),
 });
 
 export const scores = pgTable("scores", {
@@ -85,6 +86,28 @@ export const roundGroupingPlayers = pgTable("round_grouping_players", {
   id: serial("id").primaryKey(),
   groupingId: integer("grouping_id").references(() => roundGroupings.id).notNull(),
   playerId: integer("player_id").references(() => players.id).notNull(),
+});
+
+// Match pairings for match play rounds
+export const matchPairings = pgTable("match_pairings", {
+  id: serial("id").primaryKey(),
+  roundId: integer("round_id").references(() => rounds.id).notNull(),
+  matchNumber: integer("match_number").notNull(),
+  player1Id: integer("player1_id").references(() => players.id).notNull(),
+  player2Id: integer("player2_id").references(() => players.id).notNull(),
+  player1HolesWon: integer("player1_holes_won").default(0),
+  player2HolesWon: integer("player2_holes_won").default(0),
+  holesHalved: integer("holes_halved").default(0),
+  winnerId: integer("winner_id").references(() => players.id),
+  isCompleted: boolean("is_completed").default(false),
+});
+
+// Pick 9 assignments for Round 6
+export const pick9Assignments = pgTable("pick9_assignments", {
+  id: serial("id").primaryKey(),
+  roundId: integer("round_id").references(() => rounds.id).notNull(),
+  playerId: integer("player_id").references(() => players.id).notNull(),
+  holeRange: text("hole_range").notNull(), // "1-9" or "10-18"
 });
 
 // === RELATIONS ===
@@ -144,6 +167,36 @@ export const roundGroupingPlayersRelations = relations(roundGroupingPlayers, ({ 
   }),
 }));
 
+export const matchPairingsRelations = relations(matchPairings, ({ one }) => ({
+  round: one(rounds, {
+    fields: [matchPairings.roundId],
+    references: [rounds.id],
+  }),
+  player1: one(players, {
+    fields: [matchPairings.player1Id],
+    references: [players.id],
+  }),
+  player2: one(players, {
+    fields: [matchPairings.player2Id],
+    references: [players.id],
+  }),
+  winner: one(players, {
+    fields: [matchPairings.winnerId],
+    references: [players.id],
+  }),
+}));
+
+export const pick9AssignmentsRelations = relations(pick9Assignments, ({ one }) => ({
+  round: one(rounds, {
+    fields: [pick9Assignments.roundId],
+    references: [rounds.id],
+  }),
+  player: one(players, {
+    fields: [pick9Assignments.playerId],
+    references: [players.id],
+  }),
+}));
+
 // === BASE SCHEMAS ===
 export const insertScoreSchema = createInsertSchema(scores).omit({ id: true });
 export const insertRoundSchema = createInsertSchema(rounds).omit({ id: true });
@@ -197,4 +250,14 @@ export type RoundGroupingPlayer = typeof roundGroupingPlayers.$inferSelect;
 
 export type RoundGroupingWithPlayers = RoundGrouping & {
   players: (RoundGroupingPlayer & { player: Player })[];
+};
+
+// Match Play Types
+export type MatchPairing = typeof matchPairings.$inferSelect;
+export type Pick9Assignment = typeof pick9Assignments.$inferSelect;
+
+export type MatchPairingWithPlayers = MatchPairing & {
+  player1: Player;
+  player2: Player;
+  winner?: Player;
 };

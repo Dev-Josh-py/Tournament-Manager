@@ -146,6 +146,60 @@ export async function registerRoutes(
     }
   });
 
+  // Match Pairings
+  app.get('/api/rounds/:roundId/match-pairings', async (req, res) => {
+    try {
+      const roundId = Number(req.params.roundId);
+      const pairings = await storage.getMatchPairingsForRound(roundId);
+      res.json(pairings);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  app.post('/api/rounds/:roundId/match-pairings', async (req, res) => {
+    try {
+      const roundId = Number(req.params.roundId);
+      const input = req.body; // Array of {matchNumber, player1Id, player2Id}
+      const result = await storage.upsertMatchPairings(roundId, input);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  app.delete('/api/rounds/:roundId/match-pairings', async (req, res) => {
+    try {
+      const roundId = Number(req.params.roundId);
+      const result = await storage.deleteMatchPairings(roundId);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  // Pick 9 Assignments
+  app.get('/api/rounds/:roundId/pick9-assignments', async (req, res) => {
+    try {
+      const roundId = Number(req.params.roundId);
+      const assignments = await storage.getPick9Assignments(roundId);
+      res.json(assignments);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  app.post('/api/rounds/:roundId/pick9-assignments', async (req, res) => {
+    try {
+      const roundId = Number(req.params.roundId);
+      const input = req.body; // Array of {playerId, holeRange: "1-9" | "10-18"}
+      const result = await storage.upsertPick9Assignments(roundId, input);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
   // Update player handicap index
   app.put('/api/players/:id/handicap', async (req, res) => {
     try {

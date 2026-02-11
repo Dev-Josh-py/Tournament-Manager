@@ -13,6 +13,8 @@ import IndividualLeaderboard from "@/pages/IndividualLeaderboard";
 import Schedule from "@/pages/Schedule";
 import Scoring from "@/pages/Scoring";
 import GroupingSetup from "@/pages/GroupingSetup";
+import MatchPairingSetup from "@/pages/MatchPairingSetup";
+import Pick9Setup from "@/pages/Pick9Setup";
 import PlayerScorecard from "@/pages/PlayerScorecard";
 import Players from "@/pages/Players";
 import RoundSetup from "@/pages/RoundSetup";
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/schedule" component={Schedule} />
       <Route path="/scoring" component={Scoring} />
       <Route path="/grouping-setup" component={GroupingSetup} />
+      <Route path="/match-pairing-setup" component={MatchPairingSetup} />
+      <Route path="/pick9-setup" component={Pick9Setup} />
       <Route path="/players" component={Players} />
       <Route path="/player/:id" component={PlayerScorecard} />
       <Route path="/round-setup" component={RoundSetup} />

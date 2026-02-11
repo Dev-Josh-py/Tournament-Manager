@@ -112,12 +112,28 @@ export default function Schedule() {
                         Set Course Handicaps
                       </Button>
                     </Link>
-                    <Link href={`/grouping-setup?round=${round.id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Users className="w-4 h-4 mr-2" />
-                        Configure Groupings
-                      </Button>
-                    </Link>
+                    {round.formatType === 'individual_match_play' ? (
+                      <Link href={`/match-pairing-setup?round=${round.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Users className="w-4 h-4 mr-2" />
+                          Configure Matches
+                        </Button>
+                      </Link>
+                    ) : round.formatType === 'pick_9' ? (
+                      <Link href={`/pick9-setup?round=${round.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Users className="w-4 h-4 mr-2" />
+                          Assign Pick 9
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link href={`/grouping-setup?round=${round.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Users className="w-4 h-4 mr-2" />
+                          Configure Groupings
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </CardContent>
               </Card>

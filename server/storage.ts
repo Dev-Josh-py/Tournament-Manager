@@ -2,10 +2,11 @@
 import { db } from "./db";
 import {
   teams, players, rounds, courses, holes, scores, roundTeamPoints, roundHandicaps,
-  roundGroupings, roundGroupingPlayers,
+  roundGroupings, roundGroupingPlayers, matchPairings, pick9Assignments,
   type Team, type Player, type Round, type Course, type Hole, type Score, type SubmitScoreRequest,
   type RoundLeaderboardEntry, type LeaderboardEntry, type RoundWithCourse,
-  type RoundGrouping, type RoundGroupingPlayer, type RoundGroupingWithPlayers
+  type RoundGrouping, type RoundGroupingPlayer, type RoundGroupingWithPlayers,
+  type MatchPairing, type Pick9Assignment, type MatchPairingWithPlayers
 } from "@shared/schema";
 import { eq, and, asc, desc, sum, sql, inArray } from "drizzle-orm";
 
@@ -52,6 +53,15 @@ export interface IStorage {
   getGroupingsForRound(roundId: number): Promise<RoundGroupingWithPlayers[]>;
   upsertGroupings(roundId: number, groupings: Array<{ groupNumber: number; groupName?: string; playerIds: number[] }>): Promise<{ success: boolean }>;
   deleteGroupings(roundId: number): Promise<{ success: boolean }>;
+
+  // Match Pairings
+  getMatchPairingsForRound(roundId: number): Promise<MatchPairingWithPlayers[]>;
+  upsertMatchPairings(roundId: number, pairings: Array<{ matchNumber: number; player1Id: number; player2Id: number }>): Promise<{ success: boolean }>;
+  deleteMatchPairings(roundId: number): Promise<{ success: boolean }>;
+
+  // Pick 9 Assignments
+  getPick9Assignments(roundId: number): Promise<Pick9Assignment[]>;
+  upsertPick9Assignments(roundId: number, assignments: Array<{ playerId: number; holeRange: "1-9" | "10-18" }>): Promise<{ success: boolean }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -439,9 +449,8 @@ export class DatabaseStorage implements IStorage {
         case 'individual_net':
           results = this.calculateIndividualNet(scoresWithData, allTeams, round.id);
           break;
-        case 'better_ball':
-          // Round 2 is Medal format (stroke play with handicap strokes)
-          results = this.calculateBetterBallStroke(scoresWithData, allTeams);
+        case 'individual_match_play':
+          results = await this.calculateIndividualMatchPlay(scoresWithData, allTeams, round.id);
           break;
         case 'combined_stableford':
           results = this.calculateCombinedStableford(scoresWithData, allTeams);
@@ -450,11 +459,11 @@ export class DatabaseStorage implements IStorage {
           results = this.calculateBestWorst(scoresWithData, allTeams);
           break;
         case 'pick_9':
-          // Round 5 is Pick 9 Better Ball Stableford
-          results = this.calculateBetterBallStableford(scoresWithData, allTeams, true, false);
+          // Round 6 is Pick 9 Better Ball Stableford
+          results = await this.calculatePick9Stableford(scoresWithData, allTeams, round.id);
           break;
         case 'championship':
-          // Round 6 is Better Ball Stableford (max stableford per hole)
+          // Round 5 is Better Ball Stableford (max stableford per hole)
           results = this.calculateBetterBallStableford(scoresWithData, allTeams, false, true);
           break;
       }
@@ -518,6 +527,88 @@ export class DatabaseStorage implements IStorage {
       points: teamPoints.get(t.id) || 0,
       scoreMetric: teamPoints.get(t.id) || 0, // Metric is points earned in this case
       rank: 0 // Will resort outside
+    })).sort((a, b) => b.points - a.points).map((r, i) => ({ ...r, rank: i + 1 }));
+  }
+
+  private async calculateIndividualMatchPlay(scores: any[], teams: Team[], roundId: number): Promise<RoundLeaderboardEntry[]> {
+    // Get match pairings for this round
+    const pairings = await this.getMatchPairingsForRound(roundId);
+
+    if (pairings.length === 0) {
+      // No pairings set up yet, return empty leaderboard
+      return teams.map(t => ({
+        teamId: t.id,
+        teamName: t.name,
+        points: 0,
+        scoreMetric: 0,
+        rank: 0
+      }));
+    }
+
+    const teamPoints = new Map<number, number>();
+    teams.forEach(t => teamPoints.set(t.id, 0));
+
+    // Process each match
+    for (const pairing of pairings) {
+      // Get player teams
+      const player1Team = scores.find(s => s.playerId === pairing.player1Id)?.player?.teamId;
+      const player2Team = scores.find(s => s.playerId === pairing.player2Id)?.player?.teamId;
+
+      if (!player1Team || !player2Team) continue;
+
+      // Compare Stableford points hole-by-hole
+      let player1HolesWon = 0;
+      let player2HolesWon = 0;
+      let holesHalved = 0;
+
+      for (let hole = 1; hole <= 18; hole++) {
+        const player1Score = scores.find(s => s.playerId === pairing.player1Id && s.holeNumber === hole);
+        const player2Score = scores.find(s => s.playerId === pairing.player2Id && s.holeNumber === hole);
+
+        if (!player1Score || !player2Score) continue;
+
+        const p1Points = player1Score.stablefordPoints || 0;
+        const p2Points = player2Score.stablefordPoints || 0;
+
+        if (p1Points > p2Points) {
+          player1HolesWon++;
+        } else if (p2Points > p1Points) {
+          player2HolesWon++;
+        } else {
+          holesHalved++;
+        }
+      }
+
+      // Determine match winner and award team points
+      // Win = 6 points, Draw = 3 points, Loss = 1.5 points
+      if (player1HolesWon > player2HolesWon) {
+        // Player 1's team wins
+        const p1Current = teamPoints.get(player1Team) || 0;
+        const p2Current = teamPoints.get(player2Team) || 0;
+        teamPoints.set(player1Team, p1Current + 6);
+        teamPoints.set(player2Team, p2Current + 1.5);
+      } else if (player2HolesWon > player1HolesWon) {
+        // Player 2's team wins
+        const p1Current = teamPoints.get(player1Team) || 0;
+        const p2Current = teamPoints.get(player2Team) || 0;
+        teamPoints.set(player1Team, p1Current + 1.5);
+        teamPoints.set(player2Team, p2Current + 6);
+      } else {
+        // Draw (all square)
+        const p1Current = teamPoints.get(player1Team) || 0;
+        const p2Current = teamPoints.get(player2Team) || 0;
+        teamPoints.set(player1Team, p1Current + 3);
+        teamPoints.set(player2Team, p2Current + 3);
+      }
+    }
+
+    // Return team results
+    return teams.map(t => ({
+      teamId: t.id,
+      teamName: t.name,
+      points: teamPoints.get(t.id) || 0,
+      scoreMetric: teamPoints.get(t.id) || 0,
+      rank: 0
     })).sort((a, b) => b.points - a.points).map((r, i) => ({ ...r, rank: i + 1 }));
   }
 
@@ -592,6 +683,60 @@ export class DatabaseStorage implements IStorage {
     // Champ: 1st: 18, 2nd: 10, 3rd: 5 (Round 6)
     let pointsDist = [15, 8, 4];
     if (isChampionship) pointsDist = [18, 10, 5];
+
+    return sorted.map((res, idx) => ({
+      teamId: res.team.id,
+      teamName: res.team.name,
+      points: pointsDist[idx] || 0,
+      scoreMetric: res.totalPoints,
+      rank: idx + 1
+    }));
+  }
+
+  private async calculatePick9Stableford(scores: any[], teams: Team[], roundId: number): Promise<RoundLeaderboardEntry[]> {
+    // Round 6: Pick 9 Consecutive Holes Stableford
+    // Get pick 9 assignments to determine which holes count for each player
+    const assignments = await this.getPick9Assignments(roundId);
+
+    // Create a map of player ID to hole range
+    const playerHoleRangeMap = new Map<number, "1-9" | "10-18">();
+    assignments.forEach(a => {
+      playerHoleRangeMap.set(a.playerId, a.holeRange);
+    });
+
+    // Helper function to determine if a hole counts for a player
+    const holeCountsForPlayer = (playerId: number, holeNumber: number): boolean => {
+      const range = playerHoleRangeMap.get(playerId);
+      if (!range) return false; // Player doesn't have an assignment
+      if (range === "1-9") return holeNumber >= 1 && holeNumber <= 9;
+      if (range === "10-18") return holeNumber >= 10 && holeNumber <= 18;
+      return false;
+    };
+
+    const teamResults = teams.map(team => {
+      let totalPoints = 0;
+      const teamPlayers = scores.filter(s => s.player?.teamId === team.id);
+
+      // Group by hole
+      for (let hole = 1; hole <= 18; hole++) {
+        const holeScores = teamPlayers.filter(s => s.holeNumber === hole);
+        if (holeScores.length === 0) continue;
+
+        // Filter scores to only those whose designated 9 includes this hole
+        const countingScores = holeScores.filter(s => holeCountsForPlayer(s.playerId, hole));
+        if (countingScores.length === 0) continue;
+
+        // Take the max stableford points among players for whom this hole counts
+        const maxPoints = Math.max(...countingScores.map(s => s.stablefordPoints || 0));
+        totalPoints += maxPoints;
+      }
+
+      return { team, totalPoints };
+    });
+
+    // Rank teams - HIGHER stableford is better
+    const sorted = teamResults.sort((a, b) => b.totalPoints - a.totalPoints);
+    const pointsDist = [18, 10, 5]; // Pick 9 points
 
     return sorted.map((res, idx) => ({
       teamId: res.team.id,
@@ -770,6 +915,125 @@ export class DatabaseStorage implements IStorage {
       // Delete the groupings
       await db.delete(roundGroupings)
         .where(eq(roundGroupings.roundId, roundId));
+    }
+
+    return { success: true };
+  }
+
+  // === MATCH PAIRINGS ===
+
+  async getMatchPairingsForRound(roundId: number): Promise<MatchPairingWithPlayers[]> {
+    const pairings = await db.query.matchPairings.findMany({
+      where: eq(matchPairings.roundId, roundId),
+      with: {
+        player1: true,
+        player2: true,
+        winner: true
+      },
+      orderBy: asc(matchPairings.matchNumber)
+    });
+    return pairings as MatchPairingWithPlayers[];
+  }
+
+  async upsertMatchPairings(
+    roundId: number,
+    pairings: Array<{ matchNumber: number; player1Id: number; player2Id: number }>
+  ): Promise<{ success: boolean }> {
+    // Validate all playerIds exist
+    const allPlayerIds = pairings.flatMap(p => [p.player1Id, p.player2Id]);
+    const uniquePlayerIds = [...new Set(allPlayerIds)];
+
+    // Check for duplicate players
+    if (uniquePlayerIds.length !== allPlayerIds.length) {
+      throw new Error("Player cannot be in multiple matches for the same round");
+    }
+
+    // Verify all players exist
+    const validPlayers = await db.select({ id: players.id }).from(players).where(
+      inArray(players.id, uniquePlayerIds)
+    );
+
+    if (validPlayers.length !== uniquePlayerIds.length) {
+      throw new Error("One or more players do not exist");
+    }
+
+    // Verify matchNumbers are sequential starting from 1
+    const matchNumbers = pairings.map(p => p.matchNumber).sort((a, b) => a - b);
+    for (let i = 0; i < matchNumbers.length; i++) {
+      if (matchNumbers[i] !== i + 1) {
+        throw new Error("Match numbers must be sequential starting from 1");
+      }
+    }
+
+    // Delete existing pairings for this round
+    await db.delete(matchPairings)
+      .where(eq(matchPairings.roundId, roundId));
+
+    // Insert new pairings
+    for (const pairing of pairings) {
+      await db.insert(matchPairings).values({
+        roundId,
+        matchNumber: pairing.matchNumber,
+        player1Id: pairing.player1Id,
+        player2Id: pairing.player2Id,
+        player1HolesWon: 0,
+        player2HolesWon: 0,
+        holesHalved: 0,
+        winnerId: null,
+        isCompleted: false,
+      });
+    }
+
+    return { success: true };
+  }
+
+  async deleteMatchPairings(roundId: number): Promise<{ success: boolean }> {
+    await db.delete(matchPairings)
+      .where(eq(matchPairings.roundId, roundId));
+
+    return { success: true };
+  }
+
+  // === PICK 9 ASSIGNMENTS ===
+
+  async getPick9Assignments(roundId: number): Promise<Pick9Assignment[]> {
+    return await db.select().from(pick9Assignments)
+      .where(eq(pick9Assignments.roundId, roundId));
+  }
+
+  async upsertPick9Assignments(
+    roundId: number,
+    assignments: Array<{ playerId: number; holeRange: "1-9" | "10-18" }>
+  ): Promise<{ success: boolean }> {
+    // Validate all playerIds exist
+    const playerIds = assignments.map(a => a.playerId);
+    const uniquePlayerIds = [...new Set(playerIds)];
+
+    // Check for duplicate players
+    if (uniquePlayerIds.length !== playerIds.length) {
+      throw new Error("Player cannot have multiple hole range assignments");
+    }
+
+    // Verify all players exist
+    const validPlayers = await db.select({ id: players.id }).from(players).where(
+      inArray(players.id, uniquePlayerIds)
+    );
+
+    if (validPlayers.length !== uniquePlayerIds.length) {
+      throw new Error("One or more players do not exist");
+    }
+
+    // Delete existing assignments for this round
+    await db.delete(pick9Assignments)
+      .where(eq(pick9Assignments.roundId, roundId));
+
+    // Insert new assignments
+    for (const assignment of assignments) {
+      await db.insert(pick9Assignments).values({
+        roundId,
+        playerId: assignment.playerId,
+        holeRange: assignment.holeRange,
+      });
     }
 
     return { success: true };

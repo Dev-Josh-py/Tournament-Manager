@@ -141,6 +141,72 @@ export const api = {
         200: z.object({ success: z.boolean() }),
       },
     },
+  },
+  matchPairings: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/rounds/:roundId/match-pairings',
+      responses: {
+        200: z.array(z.object({
+          id: z.number(),
+          roundId: z.number(),
+          matchNumber: z.number(),
+          player1Id: z.number(),
+          player2Id: z.number(),
+          player1HolesWon: z.number(),
+          player2HolesWon: z.number(),
+          holesHalved: z.number(),
+          winnerId: z.number().nullable(),
+          isCompleted: z.boolean(),
+        })),
+      },
+    },
+    upsert: {
+      method: 'POST' as const,
+      path: '/api/rounds/:roundId/match-pairings',
+      input: z.array(z.object({
+        matchNumber: z.number(),
+        player1Id: z.number(),
+        player2Id: z.number(),
+      })),
+      responses: {
+        200: z.object({ success: z.boolean() }),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/rounds/:roundId/match-pairings',
+      responses: {
+        200: z.object({ success: z.boolean() }),
+      },
+    },
+  },
+  pick9Assignments: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/rounds/:roundId/pick9-assignments',
+      responses: {
+        200: z.array(z.object({
+          id: z.number(),
+          roundId: z.number(),
+          playerId: z.number(),
+          holeRange: z.enum(['1-9', '10-18']),
+        })),
+      },
+    },
+    upsert: {
+      method: 'POST' as const,
+      path: '/api/rounds/:roundId/pick9-assignments',
+      input: z.array(z.object({
+        playerId: z.number(),
+        holeRange: z.enum(['1-9', '10-18']),
+      })),
+      responses: {
+        200: z.object({ success: z.boolean() }),
+        400: errorSchemas.validation,
+      },
+    },
   }
 };
 

@@ -5,7 +5,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { TeamBadge } from "@/components/TeamBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trophy, Medal, AlertCircle } from "lucide-react";
+import { Trophy, Medal, AlertCircle, Swords } from "lucide-react";
 import { clsx } from "clsx";
 
 function RankIcon({ rank }: { rank: number }) {
@@ -112,7 +112,7 @@ export default function Leaderboard() {
                     </h3>
                     <span className="text-xs text-muted-foreground">{round.course.name}</span>
                   </div>
-                  <RoundLeaderboard roundId={round.id} />
+                  <RoundLeaderboard roundId={round.id} formatType={round.formatType} />
                 </div>
               ))}
             </TabsContent>
@@ -126,11 +126,11 @@ export default function Leaderboard() {
   );
 }
 
-function RoundLeaderboard({ roundId }: { roundId: number }) {
+function RoundLeaderboard({ roundId, formatType }: { roundId: number; formatType: string }) {
   const { data, isLoading } = useRoundLeaderboard(roundId);
 
   if (isLoading) return <div className="h-16 bg-white/50 rounded-xl animate-pulse" />;
-  
+
   if (!data || data.length === 0) {
     return (
       <Card className="bg-slate-50 border-dashed shadow-none">
@@ -141,31 +141,46 @@ function RoundLeaderboard({ roundId }: { roundId: number }) {
     );
   }
 
+  const isMatchPlay = formatType === 'individual_match_play';
+
   return (
-    <div className="grid gap-2">
-      {data.map((entry) => (
-        <Card key={entry.teamId} className="border-0 shadow-sm bg-white/80">
-          <CardContent className="p-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-sm font-bold text-slate-700 w-4 text-center">
-                {entry.rank}
-              </span>
-              <div>
-                <span className="font-semibold text-sm text-slate-900 block">
-                  {entry.teamName}
-                </span>
-                <span className="text-xs text-slate-600">
-                  Score Metric: {entry.scoreMetric}
-                </span>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="font-bold text-primary text-lg">+{entry.points}</span>
-              <span className="text-[10px] text-slate-600 block uppercase font-bold">Points</span>
+    <div className="space-y-3">
+      {isMatchPlay && (
+        <Card className="bg-blue-50 border-blue-200 shadow-sm">
+          <CardContent className="p-3 flex items-start gap-2">
+            <Swords className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-900">
+              <span className="font-semibold block mb-1">Match Play Results</span>
+              <span className="text-xs">Teams earn 6 pts for match win, 3 pts for draw, 1.5 pts for loss (based on Stableford comparison per hole)</span>
             </div>
           </CardContent>
         </Card>
-      ))}
+      )}
+      <div className="grid gap-2">
+        {data.map((entry) => (
+          <Card key={entry.teamId} className="border-0 shadow-sm bg-white/80">
+            <CardContent className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm font-bold text-slate-700 w-4 text-center">
+                  {entry.rank}
+                </span>
+                <div>
+                  <span className="font-semibold text-sm text-slate-900 block">
+                    {entry.teamName}
+                  </span>
+                  <span className="text-xs text-slate-600">
+                    {isMatchPlay ? `Match Result: ${entry.scoreMetric} pts` : `Score Metric: ${entry.scoreMetric}`}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="font-bold text-primary text-lg">+{entry.points}</span>
+                <span className="text-[10px] text-slate-600 block uppercase font-bold">Points</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

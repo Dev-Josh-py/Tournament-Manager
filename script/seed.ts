@@ -214,6 +214,29 @@ async function seed() {
         { number: 18, par: 3, strokeIndex: 13 },
       ]
     },
+    {
+      name: "Mossel Bay GC",
+      holes: [
+        { number: 1, par: 4, strokeIndex: 13 },
+        { number: 2, par: 5, strokeIndex: 9 },
+        { number: 3, par: 4, strokeIndex: 5 },
+        { number: 4, par: 3, strokeIndex: 17 },
+        { number: 5, par: 5, strokeIndex: 1 },
+        { number: 6, par: 4, strokeIndex: 11 },
+        { number: 7, par: 4, strokeIndex: 7 },
+        { number: 8, par: 3, strokeIndex: 15 },
+        { number: 9, par: 4, strokeIndex: 3 },
+        { number: 10, par: 4, strokeIndex: 14 },
+        { number: 11, par: 5, strokeIndex: 6 },
+        { number: 12, par: 3, strokeIndex: 8 },
+        { number: 13, par: 4, strokeIndex: 12 },
+        { number: 14, par: 4, strokeIndex: 2 },
+        { number: 15, par: 5, strokeIndex: 18 },
+        { number: 16, par: 4, strokeIndex: 10 },
+        { number: 17, par: 5, strokeIndex: 4 },
+        { number: 18, par: 4, strokeIndex: 16 },
+      ]
+    },
   ];
 
   const createdCourses = [];
@@ -234,12 +257,12 @@ async function seed() {
 
   // 4. Create Rounds
   const schedule = [
-    { day: "Saturday Feb 21", courseIdx: 0, format: "individual_net", desc: "Individual Net Stroke Play" },
-    { day: "Sunday Feb 22 (AM)", courseIdx: 1, format: "better_ball", desc: "Better Ball Stroke Play" },
-    { day: "Sunday Feb 22 (PM)", courseIdx: 2, format: "combined_stableford", desc: "Combined Stableford" },
-    { day: "Monday Feb 23 (AM)", courseIdx: 3, format: "best_worst", desc: "Best/Worst Ball Stableford" },
-    { day: "Monday Feb 23 (PM)", courseIdx: 4, format: "pick_9", desc: "Pick 9 Better Ball Stableford" },
-    { day: "Tuesday Feb 24", courseIdx: 5, format: "championship", desc: "Championship Round" },
+    { day: "Saturday Feb 21", courseIdx: 0, format: "individual_net", desc: "Individual Net Stroke Play (6 players)" },
+    { day: "Sunday Feb 22 (AM)", courseIdx: 1, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
+    { day: "Sunday Feb 22 (PM)", courseIdx: 4, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
+    { day: "Monday Feb 23 (AM)", courseIdx: 3, format: "combined_stableford", desc: "Combined Stableford (Add both players' points)" },
+    { day: "Monday Feb 23 (PM)", courseIdx: 5, format: "championship", desc: "Better Ball Stableford (Best score per hole)" },
+    { day: "Tuesday Feb 24", courseIdx: 6, format: "pick_9", desc: "Pick 9 Consecutive Holes Stableford" },
   ];
 
   for (let i = 0; i < schedule.length; i++) {
@@ -286,39 +309,6 @@ async function seed() {
       }
     }
     console.log("Sample Round 1 scores added!");
-  }
-
-  // Add sample Round 2 scores
-  const round2Id = allRounds.find(r => r.roundNumber === 2)?.id;
-
-  if (round2Id) {
-    const joshScores = [4, 5, 4, 4, 4, 3, 5, 4, 4, 4, 4, 5, 4, 3, 4, 4, 3, 4];
-    const jethroScores = [4, 5, 4, 3, 4, 3, 4, 4, 4, 4, 4, 4, 4, 3, 4, 4, 3, 4];
-    const keaganScores = [5, 5, 4, 4, 5, 4, 5, 5, 5, 4, 4, 5, 5, 3, 4, 5, 4, 4];
-    const mattScores = [5, 5, 5, 5, 5, 4, 6, 5, 5, 5, 4, 5, 5, 4, 5, 5, 4, 5];
-    const rossScores = [6, 6, 5, 5, 6, 5, 6, 6, 6, 5, 5, 6, 6, 4, 5, 6, 5, 5];
-    const juanScores = [5, 5, 5, 5, 5, 4, 5, 5, 5, 5, 4, 5, 5, 4, 5, 5, 4, 5];
-
-    const scoresByPlayer = [
-      { playerId: 1, scores: joshScores },
-      { playerId: 2, scores: jethroScores },
-      { playerId: 3, scores: keaganScores },
-      { playerId: 4, scores: mattScores },
-      { playerId: 5, scores: rossScores },
-      { playerId: 6, scores: juanScores }
-    ];
-
-    for (const { playerId, scores } of scoresByPlayer) {
-      for (let hole = 1; hole <= 18; hole++) {
-        await storage.submitScore({
-          roundId: round2Id,
-          playerId,
-          holeNumber: hole,
-          grossScore: scores[hole - 1]
-        });
-      }
-    }
-    console.log("Sample Round 2 scores added!");
   }
 
   console.log("Database seeded!");
