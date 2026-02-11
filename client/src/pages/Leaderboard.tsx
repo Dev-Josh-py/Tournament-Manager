@@ -353,10 +353,10 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
       const currentMatchStatus = player1HolesWon - player2HolesWon;
       const currentHolesRemaining = 18 - (player1HolesWon + player2HolesWon + holesHalved);
 
-      // Match is decided if one player's lead >= remaining holes
+      // Match is decided if one player's lead > remaining holes (not equal, as a draw is still possible if equal)
       if (matchDecidedHole === -1 && (
-        currentMatchStatus >= currentHolesRemaining ||
-        -currentMatchStatus >= currentHolesRemaining
+        currentMatchStatus > currentHolesRemaining ||
+        -currentMatchStatus > currentHolesRemaining
       )) {
         matchDecidedHole = hole;
         decidingMatchStatus = currentMatchStatus;
@@ -380,7 +380,7 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
     sum + (pts !== null && pts !== undefined ? pts : 0), 0);
 
   const getMatchStatusDisplay = () => {
-    if (finalHolesRemaining === 0 || finalMatchStatus >= finalHolesRemaining || -finalMatchStatus >= finalHolesRemaining) {
+    if (finalHolesRemaining === 0) {
       if (finalMatchStatus === 0) return "Match Tied - All Square";
       if (finalMatchStatus > 0) return `${player1Name} wins ${finalMatchStatus} & ${finalHolesRemaining}`;
       return `${player2Name} wins ${Math.abs(finalMatchStatus)} & ${finalHolesRemaining}`;
@@ -402,7 +402,7 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
   };
 
   const getCurrentStatus = () => {
-    if (finalHolesRemaining === 0 || finalMatchStatus >= finalHolesRemaining || -finalMatchStatus >= finalHolesRemaining) {
+    if (finalHolesRemaining === 0) {
       if (finalMatchStatus === 0) return "Match Tied";
       if (finalMatchStatus > 0) return `${player1Name} wins`;
       return `${player2Name} wins`;
