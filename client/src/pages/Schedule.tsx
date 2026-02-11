@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useRounds, useRoundHandicaps, usePlayers } from "@/hooks/use-tournament";
+import { useRounds, useRoundHandicaps, usePlayers, useRoundGroupings, useMatchPairings, usePick9Assignments } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
@@ -39,15 +39,83 @@ function HandicapStatusIndicator({ roundId }: { roundId: number }) {
   );
 }
 
+function GroupingsStatusIndicator({ roundId }: { roundId: number }) {
+  const { data: groupings } = useRoundGroupings(roundId);
+
+  const groupingsConfigured = groupings && groupings.length > 0;
+
+  return (
+    <div className="flex items-center gap-1">
+      {groupingsConfigured ? (
+        <>
+          <CheckCircle2 className="w-4 h-4 text-green-600" />
+          <span className="text-xs text-green-600 font-medium">Groups Set</span>
+        </>
+      ) : (
+        <>
+          <AlertCircle className="w-4 h-4 text-amber-600" />
+          <span className="text-xs text-amber-600 font-medium">Groups Pending</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MatchesStatusIndicator({ roundId }: { roundId: number }) {
+  const { data: pairings } = useMatchPairings(roundId);
+
+  const matchesConfigured = pairings && pairings.length > 0;
+
+  return (
+    <div className="flex items-center gap-1">
+      {matchesConfigured ? (
+        <>
+          <CheckCircle2 className="w-4 h-4 text-green-600" />
+          <span className="text-xs text-green-600 font-medium">Matches Set</span>
+        </>
+      ) : (
+        <>
+          <AlertCircle className="w-4 h-4 text-amber-600" />
+          <span className="text-xs text-amber-600 font-medium">Matches Pending</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Pick9StatusIndicator({ roundId }: { roundId: number }) {
+  const { data: assignments } = usePick9Assignments(roundId);
+  const { data: players } = usePlayers();
+
+  const allAssigned = assignments && players && assignments.length === players.length && assignments.length > 0;
+
+  return (
+    <div className="flex items-center gap-1">
+      {allAssigned ? (
+        <>
+          <CheckCircle2 className="w-4 h-4 text-green-600" />
+          <span className="text-xs text-green-600 font-medium">Pick 9 Set</span>
+        </>
+      ) : (
+        <>
+          <AlertCircle className="w-4 h-4 text-amber-600" />
+          <span className="text-xs text-amber-600 font-medium">Pick 9 Pending</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Schedule() {
   const { data: rounds, isLoading } = useRounds();
 
   const getFormatBadgeColor = (formatType: string) => {
     switch (formatType) {
       case "individual_net": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "better_ball": return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      case "individual_match_play": return "bg-rose-100 text-rose-800 border-rose-200";
       case "combined_stableford": return "bg-purple-100 text-purple-800 border-purple-200";
       case "championship": return "bg-amber-100 text-amber-800 border-amber-200";
+      case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200";
       default: return "bg-slate-100 text-slate-800 border-slate-200";
     }
   };
@@ -70,11 +138,20 @@ export default function Schedule() {
                 <div className="h-2 bg-primary/20 w-full" />
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start mb-2">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Badge variant="outline" className="font-mono text-xs uppercase tracking-wider mb-2">
                         Round {round.roundNumber}
                       </Badge>
                       <HandicapStatusIndicator roundId={round.id} />
+                      {round.formatType === 'individual_match_play' && (
+                        <MatchesStatusIndicator roundId={round.id} />
+                      )}
+                      {round.formatType !== 'individual_match_play' && round.formatType !== 'individual_net' && round.formatType !== 'pick_9' && (
+                        <GroupingsStatusIndicator roundId={round.id} />
+                      )}
+                      {round.formatType === 'pick_9' && (
+                        <Pick9StatusIndicator roundId={round.id} />
+                      )}
                     </div>
                     {round.isCompleted ? (
                       <Badge className="bg-slate-200 text-slate-600 hover:bg-slate-300">Completed</Badge>
