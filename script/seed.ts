@@ -261,7 +261,7 @@ async function seed() {
     { day: "Sunday Feb 22 (AM)", courseIdx: 1, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
     { day: "Sunday Feb 22 (PM)", courseIdx: 4, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
     { day: "Monday Feb 23 (AM)", courseIdx: 3, format: "combined_stableford", desc: "Combined Stableford (Add both players' points)" },
-    { day: "Monday Feb 23 (PM)", courseIdx: 5, format: "championship", desc: "Better Ball Stableford (Best score per hole)" },
+    { day: "Monday Feb 23 (PM)", courseIdx: 5, format: "better_ball_stableford", desc: "Better Ball Stableford (Best score per hole)" },
     { day: "Tuesday Feb 24", courseIdx: 6, format: "pick_9", desc: "Pick 9 Consecutive Holes Stableford" },
   ];
 

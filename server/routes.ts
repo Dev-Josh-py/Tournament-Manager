@@ -417,12 +417,12 @@ async function seedDatabase() {
 
   // 4. Create Rounds
   const schedule = [
-    { day: "Saturday Feb 21", courseIdx: 0, format: "individual_net", desc: "Individual Net Stroke Play" },
-    { day: "Sunday Feb 22 (AM)", courseIdx: 1, format: "better_ball", desc: "Better Ball Stroke Play" },
-    { day: "Sunday Feb 22 (PM)", courseIdx: 2, format: "combined_stableford", desc: "Combined Stableford" },
-    { day: "Monday Feb 23 (AM)", courseIdx: 3, format: "best_worst", desc: "Best/Worst Ball Stableford" },
-    { day: "Monday Feb 23 (PM)", courseIdx: 4, format: "pick_9", desc: "Pick 9 Better Ball Stableford" },
-    { day: "Tuesday Feb 24", courseIdx: 5, format: "championship", desc: "Championship Round" },
+    { day: "Saturday Feb 21", courseIdx: 0, format: "individual_net", desc: "Individual Net Stroke Play (6 players)" },
+    { day: "Sunday Feb 22 (AM)", courseIdx: 1, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
+    { day: "Sunday Feb 22 (PM)", courseIdx: 4, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
+    { day: "Monday Feb 23 (AM)", courseIdx: 3, format: "combined_stableford", desc: "Combined Stableford (Add both players' points)" },
+    { day: "Monday Feb 23 (PM)", courseIdx: 5, format: "better_ball_stableford", desc: "Better Ball Stableford (Best score per hole)" },
+    { day: "Tuesday Feb 24", courseIdx: 6, format: "pick_9", desc: "Pick 9 Consecutive Holes Stableford" },
   ];
 
   for (let i = 0; i < schedule.length; i++) {

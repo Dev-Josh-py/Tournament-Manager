@@ -114,7 +114,7 @@ export default function Schedule() {
       case "individual_net": return "bg-blue-100 text-blue-800 border-blue-200";
       case "individual_match_play": return "bg-rose-100 text-rose-800 border-rose-200";
       case "combined_stableford": return "bg-purple-100 text-purple-800 border-purple-200";
-      case "championship": return "bg-amber-100 text-amber-800 border-amber-200";
+      case "better_ball_stableford": return "bg-amber-100 text-amber-800 border-amber-200";
       case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200";
       default: return "bg-slate-100 text-slate-800 border-slate-200";
     }

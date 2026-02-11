@@ -38,7 +38,7 @@ export const rounds = pgTable("rounds", {
   courseId: integer("course_id").references(() => courses.id),
   roundNumber: integer("round_number").notNull(),
   date: text("date").notNull(), // Storing as string for display (e.g., "Saturday Feb 21")
-  formatType: text("format_type").notNull(), // 'individual_net', 'individual_match_play', 'combined_stableford', 'best_worst', 'pick_9', 'championship'
+  formatType: text("format_type").notNull(), // 'individual_net', 'individual_match_play', 'combined_stableford', 'better_ball_stableford', 'pick_9'
   description: text("description").notNull(),
   isCompleted: boolean("is_completed").default(false),
   awardsTeamPoints: boolean("awards_team_points").default(true),

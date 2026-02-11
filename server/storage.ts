@@ -462,7 +462,7 @@ export class DatabaseStorage implements IStorage {
           // Round 6 is Pick 9 Better Ball Stableford
           results = await this.calculatePick9Stableford(scoresWithData, allTeams, round.id);
           break;
-        case 'championship':
+        case 'better_ball_stableford':
           // Round 5 is Better Ball Stableford (max stableford per hole)
           results = this.calculateBetterBallStableford(scoresWithData, allTeams, false, true);
           break;
