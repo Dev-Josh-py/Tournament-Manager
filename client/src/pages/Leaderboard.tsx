@@ -199,34 +199,36 @@ interface HoleCellProps {
   holeNumber: number;
   p1Points: number | null | undefined;
   p2Points: number | null | undefined;
+  p1TeamColor?: string;
+  p2TeamColor?: string;
 }
 
-function HoleCell({ holeNumber, p1Points, p2Points }: HoleCellProps) {
-  let bgColor = "bg-slate-100";
-  let winner = "";
+function HoleCell({ holeNumber, p1Points, p2Points, p1TeamColor, p2TeamColor }: HoleCellProps) {
+  let glowColor = "transparent";
+  let glowOpacity = 0;
 
   if (p1Points !== null && p1Points !== undefined && p2Points !== null && p2Points !== undefined) {
     if (p1Points > p2Points) {
-      bgColor = "bg-green-100";
-      winner = "P1";
+      glowColor = p1TeamColor || "#3b82f6";
+      glowOpacity = 0.3;
     } else if (p2Points > p1Points) {
-      bgColor = "bg-blue-100";
-      winner = "P2";
-    } else {
-      bgColor = "bg-gray-200";
-      winner = "Tie";
+      glowColor = p2TeamColor || "#3b82f6";
+      glowOpacity = 0.3;
     }
   }
 
   return (
-    <div className={clsx(
-      "aspect-square flex flex-col items-center justify-center rounded border text-center",
-      bgColor
-    )}>
-      <div className="text-xs font-bold text-slate-600">{holeNumber}</div>
+    <div
+      className="aspect-square flex flex-col items-center justify-center rounded border text-center bg-white relative overflow-hidden"
+      style={{
+        boxShadow: `0 0 12px ${glowColor}${Math.round(glowOpacity * 255).toString(16).padStart(2, '0')}`,
+      }}
+    >
+      <div className="text-xs font-bold text-slate-600 mb-1">{holeNumber}</div>
       {p1Points !== null && p1Points !== undefined && p2Points !== null && p2Points !== undefined && (
-        <div className="text-[10px] text-slate-500 mt-0.5">
-          {p1Points}/{p2Points}
+        <div className="flex flex-col gap-0.5 text-center text-[9px]">
+          <div className="font-semibold text-slate-700">{p1Points}</div>
+          <div className="font-semibold text-slate-700">{p2Points}</div>
         </div>
       )}
     </div>
@@ -236,9 +238,11 @@ function HoleCell({ holeNumber, p1Points, p2Points }: HoleCellProps) {
 interface HoleByHoleGridProps {
   player1Scores: Record<number, number | null | undefined>;
   player2Scores: Record<number, number | null | undefined>;
+  p1TeamColor?: string;
+  p2TeamColor?: string;
 }
 
-function HoleByHoleGrid({ player1Scores, player2Scores }: HoleByHoleGridProps) {
+function HoleByHoleGrid({ player1Scores, player2Scores, p1TeamColor, p2TeamColor }: HoleByHoleGridProps) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-9 gap-1">
@@ -248,6 +252,8 @@ function HoleByHoleGrid({ player1Scores, player2Scores }: HoleByHoleGridProps) {
             holeNumber={hole}
             p1Points={player1Scores[hole]}
             p2Points={player2Scores[hole]}
+            p1TeamColor={p1TeamColor}
+            p2TeamColor={p2TeamColor}
           />
         ))}
       </div>
@@ -258,6 +264,8 @@ function HoleByHoleGrid({ player1Scores, player2Scores }: HoleByHoleGridProps) {
             holeNumber={hole}
             p1Points={player1Scores[hole]}
             p2Points={player2Scores[hole]}
+            p1TeamColor={p1TeamColor}
+            p2TeamColor={p2TeamColor}
           />
         ))}
       </div>
@@ -297,15 +305,16 @@ interface MatchCardProps {
   pairing: MatchPairing & { player1?: any; player2?: any };
   scores: Score[];
   playerTeams: Record<number, { name: string; color?: string }>;
+  playerNames: Record<number, string>;
 }
 
-function MatchCard({ pairing, scores, playerTeams }: MatchCardProps) {
+function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps) {
   const player1Id = pairing.player1Id;
   const player2Id = pairing.player2Id;
 
-  // Get player names from the pairing data or scores
-  const player1Name = pairing.player1?.name || `Player ${player1Id}`;
-  const player2Name = pairing.player2?.name || `Player ${player2Id}`;
+  // Get player names from the playerNames map
+  const player1Name = playerNames[player1Id] || `Player ${player1Id}`;
+  const player2Name = playerNames[player2Id] || `Player ${player2Id}`;
 
   // Build score maps by hole
   const player1Scores: Record<number, number | null | undefined> = {};
@@ -406,7 +415,12 @@ function MatchCard({ pairing, scores, playerTeams }: MatchCardProps) {
             <div className="text-xs text-slate-600 mb-2">
               {holesPlayed} of 18 holes played
             </div>
-            <HoleByHoleGrid player1Scores={player1Scores} player2Scores={player2Scores} />
+            <HoleByHoleGrid
+              player1Scores={player1Scores}
+              player2Scores={player2Scores}
+              p1TeamColor={player1Team?.color}
+              p2TeamColor={player2Team?.color}
+            />
           </>
         )}
 
@@ -430,10 +444,12 @@ function MatchRoundScorecard({ roundId }: MatchRoundScorecardProps) {
   const { data: scores, isLoading: loadingScores } = useScores(roundId);
   const { data: players } = usePlayers();
 
-  // Build a map of player IDs to team info
+  // Build maps of player IDs to team info and names
   const playerTeams: Record<number, { name: string; color?: string }> = {};
+  const playerNames: Record<number, string> = {};
   if (players) {
     players.forEach(player => {
+      playerNames[player.id] = player.name;
       if (player.team) {
         playerTeams[player.id] = {
           name: player.team.name,
@@ -471,6 +487,7 @@ function MatchRoundScorecard({ roundId }: MatchRoundScorecardProps) {
           pairing={pairing}
           scores={scores || []}
           playerTeams={playerTeams}
+          playerNames={playerNames}
         />
       ))}
     </div>
