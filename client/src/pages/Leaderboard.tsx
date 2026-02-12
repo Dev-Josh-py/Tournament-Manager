@@ -22,7 +22,7 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <Header title="Championship Standings" subtitle="Live Tournament Updates" />
+      <Header title="Tournament Standings" subtitle="Live Tournament Updates" />
       
       <PageTransition>
         <main className="max-w-3xl mx-auto px-4 space-y-6">
@@ -66,32 +66,29 @@ export default function Leaderboard() {
                     "border-none shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden relative",
                     idx === 0 ? "bg-gradient-to-r from-yellow-50 to-white border-l-4 border-l-yellow-400" : "bg-white"
                   )}>
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <div className="flex-shrink-0 w-8 flex justify-center">
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className="flex-shrink-0 w-6 flex justify-center">
                         <RankIcon rank={entry.rank} />
                       </div>
-                      
-                      <div className="flex-grow">
-                        <div className="flex items-center gap-2 mb-1">
+
+                      <div className="flex-grow min-w-0">
+                        <div className="flex items-center gap-1.5">
                           <div
-                            className="w-3 h-3 rounded-full shadow-sm"
+                            className="w-2.5 h-2.5 rounded-full shadow-sm flex-shrink-0"
                             style={{ backgroundColor: entry.teamColor }}
                           />
-                          <span className="font-semibold text-sm text-slate-900">
+                          <span className="font-semibold text-sm text-slate-900 truncate">
                             {entry.teamName}
                           </span>
                         </div>
-                        <div className="text-xs text-slate-600 font-medium">
-                          {entry.totalPoints} pts
-                        </div>
                       </div>
 
-                      <div className="text-right">
-                        <span className="text-2xl font-bold font-display text-slate-900">
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-xl font-bold font-display text-slate-900">
                           {entry.totalPoints}
                         </span>
                         <span className="block text-[10px] uppercase tracking-wider text-slate-600 font-bold">
-                          Total
+                          pts
                         </span>
                       </div>
                     </CardContent>
@@ -165,23 +162,23 @@ function RoundLeaderboard({ roundId, formatType }: { roundId: number; formatType
       <div className="grid gap-2">
         {data.map((entry) => (
           <Card key={entry.teamId} className="border-0 shadow-sm bg-white/80">
-            <CardContent className="p-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-sm font-bold text-slate-700 w-4 text-center">
+            <CardContent className="p-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-mono text-xs font-bold text-slate-700 w-4 text-center flex-shrink-0">
                   {entry.rank}
                 </span>
-                <div>
-                  <span className="font-semibold text-sm text-slate-900 block">
+                <div className="min-w-0">
+                  <span className="font-semibold text-sm text-slate-900 block truncate">
                     {entry.teamName}
                   </span>
-                  <span className="text-xs text-slate-600">
-                    {isMatchPlay ? `Match Result: ${entry.scoreMetric} pts` : `Score Metric: ${entry.scoreMetric}`}
+                  <span className="text-[11px] text-slate-600">
+                    {isMatchPlay ? `${entry.scoreMetric} pts` : `Score: ${entry.scoreMetric}`}
                   </span>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="font-bold text-primary text-lg">+{entry.points}</span>
-                <span className="text-[10px] text-slate-600 block uppercase font-bold">Points</span>
+              <div className="text-right flex-shrink-0">
+                <span className="font-bold text-primary text-base">+{entry.points}</span>
+                <span className="text-[9px] text-slate-600 block uppercase font-bold">pts</span>
               </div>
             </CardContent>
           </Card>
@@ -219,14 +216,14 @@ function HoleCell({ holeNumber, p1Points, p2Points, p1TeamColor, p2TeamColor }: 
 
   return (
     <div
-      className="aspect-square flex flex-col items-center justify-center rounded border text-center bg-white relative overflow-hidden"
+      className="aspect-square flex flex-col items-center justify-center rounded border text-center bg-white relative overflow-hidden min-w-0"
       style={{
-        boxShadow: `0 0 12px ${glowColor}${Math.round(glowOpacity * 255).toString(16).padStart(2, '0')}`,
+        boxShadow: `0 0 8px ${glowColor}${Math.round(glowOpacity * 255).toString(16).padStart(2, '0')}`,
       }}
     >
-      <div className="text-xs font-bold text-slate-600 mb-1">{holeNumber}</div>
+      <div className="text-[9px] sm:text-xs font-bold text-slate-600 leading-none">{holeNumber}</div>
       {p1Points !== null && p1Points !== undefined && p2Points !== null && p2Points !== undefined && (
-        <div className="flex flex-col gap-0.5 text-center text-[9px]">
+        <div className="flex flex-col text-center text-[8px] sm:text-[9px] leading-tight mt-0.5">
           <div className="font-semibold text-slate-700">{p1Points}</div>
           <div className="font-semibold text-slate-700">{p2Points}</div>
         </div>
@@ -244,8 +241,8 @@ interface HoleByHoleGridProps {
 
 function HoleByHoleGrid({ player1Scores, player2Scores, p1TeamColor, p2TeamColor }: HoleByHoleGridProps) {
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-9 gap-1">
+    <div className="space-y-1.5">
+      <div className="grid grid-cols-9 gap-0.5 sm:gap-1">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(hole => (
           <HoleCell
             key={hole}
@@ -257,7 +254,7 @@ function HoleByHoleGrid({ player1Scores, player2Scores, p1TeamColor, p2TeamColor
           />
         ))}
       </div>
-      <div className="grid grid-cols-9 gap-1">
+      <div className="grid grid-cols-9 gap-0.5 sm:gap-1">
         {[10, 11, 12, 13, 14, 15, 16, 17, 18].map(hole => (
           <HoleCell
             key={hole}
@@ -283,18 +280,15 @@ interface PlayerInfoProps {
 
 function PlayerInfo({ playerName, teamName, teamColor, holesWon, totalStableford }: PlayerInfoProps) {
   return (
-    <div className="flex-1">
-      <div className="flex items-center gap-2 mb-1">
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-1.5 mb-0.5">
         <div
-          className="w-3 h-3 rounded-full"
+          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
           style={{ backgroundColor: teamColor || "#999" }}
         />
-        <div className="min-w-0">
-          <p className="font-semibold text-sm text-slate-900 truncate">{playerName}</p>
-          <p className="text-xs text-slate-500 truncate">{teamName}</p>
-        </div>
+        <p className="font-semibold text-xs sm:text-sm text-slate-900 truncate">{playerName}</p>
       </div>
-      <div className="text-xs text-slate-600">
+      <div className="text-[10px] sm:text-xs text-slate-600 ml-4">
         {holesWon} holes | {totalStableford} pts
       </div>
     </div>
@@ -428,19 +422,19 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
 
   return (
     <Card className="border-0 shadow-sm bg-white">
-      <CardContent className="p-4">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-slate-600">Match {pairing.matchNumber}</span>
-            <div className="text-right">
-              <div className="text-sm font-bold text-slate-900">{getCurrentStatus()}</div>
-              <div className="text-xs text-slate-600 mt-0.5">
+      <CardContent className="p-3 sm:p-4">
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs sm:text-sm font-semibold text-slate-600">Match {pairing.matchNumber}</span>
+            <div className="text-right min-w-0 ml-2">
+              <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">{getCurrentStatus()}</div>
+              <div className="text-[10px] sm:text-xs text-slate-600">
                 {matchDecidedHole !== -1 ? getMatchStatusDisplay() : `Thru ${holesPlayed}`}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-2 gap-2 mb-3">
             <PlayerInfo
               playerName={player1Name}
               teamName={player1Team?.name || "Unknown"}
@@ -460,7 +454,7 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
 
         {holesPlayed > 0 && (
           <>
-            <div className="text-xs text-slate-600 mb-2">
+            <div className="text-[10px] sm:text-xs text-slate-600 mb-1.5">
               {holesPlayed} of 18 holes played
             </div>
             <HoleByHoleGrid
@@ -563,11 +557,11 @@ function MatchPlayLiveScoreboard({ rounds }: MatchPlayLiveScorecardProps) {
     <div className="space-y-8">
       {matchPlayRounds.map(round => (
         <div key={round.id}>
-          <div className="mb-4">
-            <h3 className="text-sm font-bold text-slate-900 mb-1">
-              Round {round.roundNumber}: {round.course.name}
+          <div className="mb-3">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 mb-0.5">
+              R{round.roundNumber}: {round.course.name}
             </h3>
-            <p className="text-xs text-slate-600">{round.date}</p>
+            <p className="text-[10px] sm:text-xs text-slate-600">{round.date}</p>
           </div>
           <MatchRoundScorecard roundId={round.id} />
         </div>

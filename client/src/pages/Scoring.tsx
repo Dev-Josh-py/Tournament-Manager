@@ -851,37 +851,12 @@ export default function Scoring() {
                       onClick={() => setShowStatsPanel(!showStatsPanel)}
                       className="text-xs font-medium text-slate-500 hover:text-slate-700 transition w-full text-center py-1"
                     >
-                      {showStatsPanel ? 'Hide Stats' : 'Track GIR / FIR / Putts'}
+                      {showStatsPanel ? 'Hide Stats' : 'Track FIR / GIR / Putts'}
                     </button>
 
                     {/* Stats Inputs */}
                     {showStatsPanel && (
                       <div className="w-full space-y-3">
-                        {/* GIR */}
-                        <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2 rounded-lg">
-                          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">GIR</span>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setGir(gir === true ? null : true)}
-                              className={clsx(
-                                "px-3 py-1 rounded text-xs font-bold transition",
-                                gir === true ? "bg-emerald-600 text-white" : "bg-white border border-slate-200 text-slate-600"
-                              )}
-                            >
-                              Yes
-                            </button>
-                            <button
-                              onClick={() => setGir(gir === false ? null : false)}
-                              className={clsx(
-                                "px-3 py-1 rounded text-xs font-bold transition",
-                                gir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-600"
-                              )}
-                            >
-                              No
-                            </button>
-                          </div>
-                        </div>
-
                         {/* FIR - hidden on par 3 */}
                         {currentHoleData.par !== 3 && (
                           <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/30 px-4 py-2 rounded-lg">
@@ -908,6 +883,31 @@ export default function Scoring() {
                             </div>
                           </div>
                         )}
+
+                        {/* GIR */}
+                        <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2 rounded-lg">
+                          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">GIR</span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setGir(gir === true ? null : true)}
+                              className={clsx(
+                                "px-3 py-1 rounded text-xs font-bold transition",
+                                gir === true ? "bg-emerald-600 text-white" : "bg-white border border-slate-200 text-slate-600"
+                              )}
+                            >
+                              Yes
+                            </button>
+                            <button
+                              onClick={() => setGir(gir === false ? null : false)}
+                              className={clsx(
+                                "px-3 py-1 rounded text-xs font-bold transition",
+                                gir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-600"
+                              )}
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
 
                         {/* Putts */}
                         <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-lg">
@@ -1174,17 +1174,6 @@ export default function Scoring() {
 
                             {/* Compact Stats Row */}
                             <div className="flex items-center gap-2 mt-2 ml-5">
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-emerald-600 font-medium">G</span>
-                                <button
-                                  onClick={() => updateGroupStat('gir', playerGir === true ? null : true)}
-                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
-                                >&#10003;</button>
-                                <button
-                                  onClick={() => updateGroupStat('gir', playerGir === false ? null : false)}
-                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
-                                >&#10007;</button>
-                              </div>
                               {currentHoleData.par !== 3 && (
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px] text-blue-600 font-medium">F</span>
@@ -1198,6 +1187,17 @@ export default function Scoring() {
                                   >&#10007;</button>
                                 </div>
                               )}
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-emerald-600 font-medium">G</span>
+                                <button
+                                  onClick={() => updateGroupStat('gir', playerGir === true ? null : true)}
+                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
+                                >&#10003;</button>
+                                <button
+                                  onClick={() => updateGroupStat('gir', playerGir === false ? null : false)}
+                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                >&#10007;</button>
+                              </div>
                               <div className="flex items-center gap-1">
                                 <span className="text-[10px] text-slate-500 font-medium">P</span>
                                 <button
@@ -1471,17 +1471,6 @@ export default function Scoring() {
 
                             {/* Compact Stats */}
                             <div className="flex items-center justify-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-emerald-600 font-medium">G</span>
-                                <button
-                                  onClick={() => updateMatchStat('gir', playerGir === true ? null : true)}
-                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
-                                >&#10003;</button>
-                                <button
-                                  onClick={() => updateMatchStat('gir', playerGir === false ? null : false)}
-                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
-                                >&#10007;</button>
-                              </div>
                               {currentHoleData.par !== 3 && (
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px] text-blue-600 font-medium">F</span>
@@ -1495,6 +1484,17 @@ export default function Scoring() {
                                   >&#10007;</button>
                                 </div>
                               )}
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-emerald-600 font-medium">G</span>
+                                <button
+                                  onClick={() => updateMatchStat('gir', playerGir === true ? null : true)}
+                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
+                                >&#10003;</button>
+                                <button
+                                  onClick={() => updateMatchStat('gir', playerGir === false ? null : false)}
+                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                >&#10007;</button>
+                              </div>
                               <div className="flex items-center gap-1">
                                 <span className="text-[10px] text-slate-500 font-medium">P</span>
                                 <button

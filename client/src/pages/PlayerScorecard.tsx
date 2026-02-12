@@ -82,7 +82,7 @@ export default function PlayerScorecard() {
       />
 
       <PageTransition>
-        <main className="max-w-2xl mx-auto px-4 space-y-6">
+        <main className="max-w-2xl mx-auto px-2 sm:px-4 space-y-4 sm:space-y-6">
 
           {/* Player Selection */}
           <div className="space-y-2">
@@ -277,15 +277,15 @@ function RoundSummaryCard({
 
   return (
     <Card className="border-0 shadow-sm overflow-hidden">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-bold text-lg">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="min-w-0">
+            <h3 className="font-bold text-sm sm:text-lg truncate">
               R{round.roundNumber}: {round.course.name}
             </h3>
-            <p className="text-xs text-muted-foreground">{round.date}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">{round.date}</p>
           </div>
-          <Badge variant="outline" className="dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">{round.formatType.replace(/_/g, ' ')}</Badge>
+          <Badge variant="outline" className="dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 text-[10px] sm:text-xs flex-shrink-0">{round.formatType.replace(/_/g, ' ')}</Badge>
         </div>
 
         <ScoreboardTable
@@ -384,9 +384,9 @@ function RoundDetailCard({
   return (
     <div className="space-y-4">
       <Card className="border-0 shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-xl">{round.course.name}</h3>
+        <CardContent className="p-3 sm:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-base sm:text-xl truncate mr-2">{round.course.name}</h3>
             {!isEditMode && playerScores.length > 0 && (
               <Button
                 size="sm"
