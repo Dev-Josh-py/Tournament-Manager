@@ -368,12 +368,19 @@ export class DatabaseStorage implements IStorage {
       handicapToUse
     );
 
-    const values = {
-      ...data,
+    const values: any = {
+      roundId: data.roundId,
+      playerId: data.playerId,
+      holeNumber: data.holeNumber,
+      grossScore: data.grossScore,
+      isPick9: data.isPick9,
       netScore,
       stablefordPoints,
       handicapUsed: handicapToUse,
     };
+    if (data.gir !== undefined) values.gir = data.gir;
+    if (data.fir !== undefined) values.fir = data.fir;
+    if (data.putts !== undefined) values.putts = data.putts;
 
     if (existing.length > 0) {
       const [updated] = await db.update(scores)

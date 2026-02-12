@@ -54,6 +54,9 @@ export const scores = pgTable("scores", {
   stablefordPoints: integer("stableford_points"), // Calculated based on format
   isPick9: boolean("is_pick_9").default(false), // For Round 5
   handicapUsed: integer("handicap_used"), // Audit trail - handicap used for this score
+  gir: boolean("gir"), // null = not tracked, true = hit, false = missed
+  fir: boolean("fir"), // null = not tracked / par 3, true = hit, false = missed
+  putts: integer("putts"), // null = not tracked, 0+ = putts taken
 });
 
 // To store the final point allocation for the tournament leaderboard
@@ -225,6 +228,9 @@ export type SubmitScoreRequest = {
   holeNumber: number;
   grossScore: number;
   isPick9?: boolean;
+  gir?: boolean | null;
+  fir?: boolean | null;
+  putts?: number | null;
 };
 
 // Response types

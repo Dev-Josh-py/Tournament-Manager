@@ -293,6 +293,7 @@ function RoundSummaryCard({
           holes={round.holes || []}
           roundFormat={round.formatType}
           courseHandicap={playerHandicapData?.courseHandicap}
+          showStats={true}
         />
       </CardContent>
     </Card>

@@ -26,14 +26,18 @@ export default function Scoring() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
   const [strokes, setStrokes] = useState<number>(4);
   const [isPick9, setIsPick9] = useState<boolean>(false);
+  const [showStatsPanel, setShowStatsPanel] = useState<boolean>(false);
+  const [gir, setGir] = useState<boolean | null>(null);
+  const [fir, setFir] = useState<boolean | null>(null);
+  const [putts, setPutts] = useState<number | null>(null);
 
   // Group mode state
   const [selectedGroupNumber, setSelectedGroupNumber] = useState<number>(0);
-  const [groupScores, setGroupScores] = useState<Record<number, Record<number, { strokes: number; isPick9: boolean }>>>({});
+  const [groupScores, setGroupScores] = useState<Record<number, Record<number, { strokes: number; isPick9: boolean; gir?: boolean | null; fir?: boolean | null; putts?: number | null }>>>({});
 
   // Match play mode state
   const [selectedMatchNumber, setSelectedMatchNumber] = useState<number>(0);
-  const [matchScores, setMatchScores] = useState<Record<number, Record<number, Record<number, number>>>>({});
+  const [matchScores, setMatchScores] = useState<Record<number, Record<number, Record<number, { strokes: number; gir?: boolean | null; fir?: boolean | null; putts?: number | null }>>>>({});
 
   const { data: rounds } = useRounds();
   const { data: players } = usePlayers();
@@ -86,6 +90,19 @@ export default function Scoring() {
     return undefined;
   }, [isGroupMode, selectedPlayerId, existingScores, currentHole]);
 
+  // Single player mode: load stats from existing score when hole changes
+  useEffect(() => {
+    if (existingScore) {
+      setGir(existingScore.gir ?? null);
+      setFir(existingScore.fir ?? null);
+      setPutts(existingScore.putts ?? null);
+    } else {
+      setGir(null);
+      setFir(null);
+      setPutts(null);
+    }
+  }, [existingScore]);
+
   // Single player mode: calculate scored holes
   const scoredHoles = useMemo(() => {
     if (isGroupMode || !existingScores || !selectedPlayerId) return new Set<number>();
@@ -100,13 +117,19 @@ export default function Scoring() {
   const handleScoreSubmit = async () => {
     if (!selectedRoundId) return;
 
+    // Force fir to null on par 3 holes
+    const isPar3 = currentHoleData?.par === 3;
+
     try {
       await submitScore.mutateAsync({
         roundId: Number(selectedRoundId),
         playerId: Number(selectedPlayerId),
         holeNumber: currentHole,
         grossScore: strokes,
-        isPick9: isPick9
+        isPick9: isPick9,
+        gir,
+        fir: isPar3 ? null : fir,
+        putts,
       });
 
       toast({
@@ -136,13 +159,18 @@ export default function Scoring() {
     const playerGroupScore = groupScores[selectedGroupNumber]?.[playerId];
     if (!playerGroupScore) return;
 
+    const isPar3 = currentHoleData?.par === 3;
+
     try {
       await submitScore.mutateAsync({
         roundId: Number(selectedRoundId),
         playerId,
         holeNumber: currentHole,
         grossScore: playerGroupScore.strokes,
-        isPick9: playerGroupScore.isPick9
+        isPick9: playerGroupScore.isPick9,
+        gir: playerGroupScore.gir,
+        fir: isPar3 ? null : playerGroupScore.fir,
+        putts: playerGroupScore.putts,
       });
 
       toast({
@@ -177,13 +205,17 @@ export default function Scoring() {
     try {
       // Save any unsaved scores for current hole
       if (groupScoresForHole && Object.keys(groupScoresForHole).length > 0) {
+        const isPar3 = currentHoleData?.par === 3;
         const promises = Object.entries(groupScoresForHole).map(([playerId, score]) =>
           submitScore.mutateAsync({
             roundId: Number(selectedRoundId),
             playerId: Number(playerId),
             holeNumber: currentHole,
             grossScore: score.strokes,
-            isPick9: score.isPick9
+            isPick9: score.isPick9,
+            gir: score.gir,
+            fir: isPar3 ? null : score.fir,
+            putts: score.putts,
           })
         );
 
@@ -220,14 +252,19 @@ export default function Scoring() {
     if (!selectedRoundId || !selectedMatchNumber) return;
 
     const playerMatchScore = matchScores[selectedMatchNumber]?.[playerId]?.[currentHole];
-    if (playerMatchScore === undefined || playerMatchScore === null) return;
+    if (!playerMatchScore) return;
+
+    const isPar3 = currentHoleData?.par === 3;
 
     try {
       await submitScore.mutateAsync({
         roundId: Number(selectedRoundId),
         playerId,
         holeNumber: currentHole,
-        grossScore: playerMatchScore,
+        grossScore: playerMatchScore.strokes,
+        gir: playerMatchScore.gir,
+        fir: isPar3 ? null : playerMatchScore.fir,
+        putts: playerMatchScore.putts,
       });
 
       toast({
@@ -258,13 +295,17 @@ export default function Scoring() {
 
     try {
       // For single player mode: save the final score
+      const isPar3 = currentHoleData?.par === 3;
       if (!isGroupMode && !isMatchPlayMode && selectedPlayerId) {
         await submitScore.mutateAsync({
           roundId: Number(selectedRoundId),
           playerId: Number(selectedPlayerId),
           holeNumber: currentHole,
           grossScore: strokes,
-          isPick9: isPick9
+          isPick9: isPick9,
+          gir,
+          fir: isPar3 ? null : fir,
+          putts,
         });
       }
       // For group mode: save any unsaved scores
@@ -277,7 +318,10 @@ export default function Scoring() {
               playerId: Number(playerId),
               holeNumber: currentHole,
               grossScore: score.strokes,
-              isPick9: score.isPick9
+              isPick9: score.isPick9,
+              gir: score.gir,
+              fir: isPar3 ? null : score.fir,
+              putts: score.putts,
             })
           );
           await Promise.all(promises);
@@ -289,13 +333,18 @@ export default function Scoring() {
         if (matchHoleScores) {
           const promises: Promise<any>[] = [];
           for (const [playerId, holes] of Object.entries(matchHoleScores)) {
-            for (const [hole, score] of Object.entries(holes)) {
+            for (const [hole, scoreData] of Object.entries(holes)) {
+              const holeNum = Number(hole);
+              const holePar3 = roundDetails?.holes.find(h => h.number === holeNum)?.par === 3;
               promises.push(
                 submitScore.mutateAsync({
                   roundId: Number(selectedRoundId),
                   playerId: Number(playerId),
-                  holeNumber: Number(hole),
-                  grossScore: score,
+                  holeNumber: holeNum,
+                  grossScore: scoreData.strokes,
+                  gir: scoreData.gir,
+                  fir: holePar3 ? null : scoreData.fir,
+                  putts: scoreData.putts,
                 })
               );
             }
@@ -797,6 +846,91 @@ export default function Scoring() {
                       </div>
                     )}
 
+                    {/* Stats Tracking Toggle */}
+                    <button
+                      onClick={() => setShowStatsPanel(!showStatsPanel)}
+                      className="text-xs font-medium text-slate-500 hover:text-slate-700 transition w-full text-center py-1"
+                    >
+                      {showStatsPanel ? 'Hide Stats' : 'Track GIR / FIR / Putts'}
+                    </button>
+
+                    {/* Stats Inputs */}
+                    {showStatsPanel && (
+                      <div className="w-full space-y-3">
+                        {/* GIR */}
+                        <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2 rounded-lg">
+                          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">GIR</span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setGir(gir === true ? null : true)}
+                              className={clsx(
+                                "px-3 py-1 rounded text-xs font-bold transition",
+                                gir === true ? "bg-emerald-600 text-white" : "bg-white border border-slate-200 text-slate-600"
+                              )}
+                            >
+                              Yes
+                            </button>
+                            <button
+                              onClick={() => setGir(gir === false ? null : false)}
+                              className={clsx(
+                                "px-3 py-1 rounded text-xs font-bold transition",
+                                gir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-600"
+                              )}
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* FIR - hidden on par 3 */}
+                        {currentHoleData.par !== 3 && (
+                          <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/30 px-4 py-2 rounded-lg">
+                            <span className="text-sm font-medium text-blue-700 dark:text-blue-400">FIR</span>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setFir(fir === true ? null : true)}
+                                className={clsx(
+                                  "px-3 py-1 rounded text-xs font-bold transition",
+                                  fir === true ? "bg-blue-600 text-white" : "bg-white border border-slate-200 text-slate-600"
+                                )}
+                              >
+                                Yes
+                              </button>
+                              <button
+                                onClick={() => setFir(fir === false ? null : false)}
+                                className={clsx(
+                                  "px-3 py-1 rounded text-xs font-bold transition",
+                                  fir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-600"
+                                )}
+                              >
+                                No
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Putts */}
+                        <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-lg">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Putts</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setPutts(putts !== null ? Math.max(0, putts - 1) : 0)}
+                              className="w-7 h-7 rounded border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
+                            >
+                              -
+                            </button>
+                            <span className="w-6 text-center font-bold text-sm">{putts ?? '-'}</span>
+                            <button
+                              onClick={() => setPutts(putts !== null ? Math.min(10, putts + 1) : 1)}
+                              className="w-7 h-7 rounded border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {existingScore && (
                       <div className="absolute top-3 right-3 flex items-center gap-1 text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold uppercase tracking-wide">
                         <CheckCircle className="w-3 h-3" /> Saved: {existingScore.grossScore}
@@ -937,78 +1071,145 @@ export default function Scoring() {
                         const playerUnsaved = groupScores[selectedGroupNumber]?.[player.id];
                         const currentScore = playerUnsaved?.strokes || (existingPlayerScore?.grossScore) || 0;
                         const scoreColor = getScoreColor(currentScore, currentHoleData.par);
-
                         const isSaved = existingPlayerScore && !playerUnsaved;
 
+                        const playerGir = playerUnsaved?.gir ?? existingPlayerScore?.gir ?? null;
+                        const playerFir = playerUnsaved?.fir ?? existingPlayerScore?.fir ?? null;
+                        const playerPutts = playerUnsaved?.putts ?? existingPlayerScore?.putts ?? null;
+
+                        const updateGroupStat = (field: 'gir' | 'fir' | 'putts', value: any) => {
+                          setGroupScores(prev => {
+                            const existing = prev[selectedGroupNumber]?.[player.id];
+                            return {
+                              ...prev,
+                              [selectedGroupNumber]: {
+                                ...prev[selectedGroupNumber],
+                                [player.id]: {
+                                  strokes: existing?.strokes || currentScore || 4,
+                                  isPick9: existing?.isPick9 || false,
+                                  gir: existing?.gir ?? playerGir,
+                                  fir: existing?.fir ?? playerFir,
+                                  putts: existing?.putts ?? playerPutts,
+                                  [field]: value,
+                                }
+                              }
+                            };
+                          });
+                        };
+
                         return (
-                          <div key={player.id} className="p-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition">
-                            {/* Player Info */}
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <div
-                                className="w-3 h-3 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: player.team?.color || "#999" }}
-                              />
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1">
-                                  <div className="text-sm font-semibold truncate">{player.name}</div>
-                                  {isSaved && (
-                                    <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
-                                  )}
+                          <div key={player.id} className="p-3 hover:bg-slate-50 transition">
+                            <div className="flex items-center justify-between gap-3">
+                              {/* Player Info */}
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <div
+                                  className="w-3 h-3 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: player.team?.color || "#999" }}
+                                />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1">
+                                    <div className="text-sm font-semibold truncate">{player.name}</div>
+                                    {isSaved && (
+                                      <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-slate-500 truncate">HCP {player.handicap}</div>
                                 </div>
-                                <div className="text-xs text-slate-500 truncate">HCP {player.handicap}</div>
+                              </div>
+
+                              {/* Score Controls */}
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-sm font-light rounded border-slate-300"
+                                  onClick={() => {
+                                    const newStrokes = Math.max(1, (playerUnsaved?.strokes || currentScore || 4) - 1);
+                                    setGroupScores(prev => ({
+                                      ...prev,
+                                      [selectedGroupNumber]: {
+                                        ...prev[selectedGroupNumber],
+                                        [player.id]: {
+                                          ...prev[selectedGroupNumber]?.[player.id],
+                                          strokes: newStrokes,
+                                          isPick9: playerUnsaved?.isPick9 || false
+                                        }
+                                      }
+                                    }));
+                                  }}
+                                >
+                                  −
+                                </Button>
+
+                                <div className={clsx(
+                                  "w-10 text-center font-bold text-sm",
+                                  scoreColor
+                                )}>
+                                  {currentScore || "-"}
+                                </div>
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-sm font-light rounded border-slate-300"
+                                  onClick={() => {
+                                    const newStrokes = Math.min(15, (playerUnsaved?.strokes || currentScore || 4) + 1);
+                                    setGroupScores(prev => ({
+                                      ...prev,
+                                      [selectedGroupNumber]: {
+                                        ...prev[selectedGroupNumber],
+                                        [player.id]: {
+                                          ...prev[selectedGroupNumber]?.[player.id],
+                                          strokes: newStrokes,
+                                          isPick9: playerUnsaved?.isPick9 || false
+                                        }
+                                      }
+                                    }));
+                                  }}
+                                >
+                                  +
+                                </Button>
                               </div>
                             </div>
 
-                            {/* Score Controls */}
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-sm font-light rounded border-slate-300"
-                                onClick={() => {
-                                  const newStrokes = Math.max(1, (playerUnsaved?.strokes || currentScore || 4) - 1);
-                                  setGroupScores(prev => ({
-                                    ...prev,
-                                    [selectedGroupNumber]: {
-                                      ...prev[selectedGroupNumber],
-                                      [player.id]: {
-                                        strokes: newStrokes,
-                                        isPick9: playerUnsaved?.isPick9 || false
-                                      }
-                                    }
-                                  }));
-                                }}
-                              >
-                                −
-                              </Button>
-
-                              <div className={clsx(
-                                "w-10 text-center font-bold text-sm",
-                                scoreColor
-                              )}>
-                                {currentScore || "-"}
+                            {/* Compact Stats Row */}
+                            <div className="flex items-center gap-2 mt-2 ml-5">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-emerald-600 font-medium">G</span>
+                                <button
+                                  onClick={() => updateGroupStat('gir', playerGir === true ? null : true)}
+                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
+                                >&#10003;</button>
+                                <button
+                                  onClick={() => updateGroupStat('gir', playerGir === false ? null : false)}
+                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                >&#10007;</button>
                               </div>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-sm font-light rounded border-slate-300"
-                                onClick={() => {
-                                  const newStrokes = Math.min(15, (playerUnsaved?.strokes || currentScore || 4) + 1);
-                                  setGroupScores(prev => ({
-                                    ...prev,
-                                    [selectedGroupNumber]: {
-                                      ...prev[selectedGroupNumber],
-                                      [player.id]: {
-                                        strokes: newStrokes,
-                                        isPick9: playerUnsaved?.isPick9 || false
-                                      }
-                                    }
-                                  }));
-                                }}
-                              >
-                                +
-                              </Button>
+                              {currentHoleData.par !== 3 && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-blue-600 font-medium">F</span>
+                                  <button
+                                    onClick={() => updateGroupStat('fir', playerFir === true ? null : true)}
+                                    className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400")}
+                                  >&#10003;</button>
+                                  <button
+                                    onClick={() => updateGroupStat('fir', playerFir === false ? null : false)}
+                                    className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                  >&#10007;</button>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-slate-500 font-medium">P</span>
+                                <button
+                                  onClick={() => updateGroupStat('putts', playerPutts !== null ? Math.max(0, playerPutts - 1) : 0)}
+                                  className="w-5 h-5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold"
+                                >-</button>
+                                <span className="text-[10px] font-bold w-4 text-center">{playerPutts ?? '-'}</span>
+                                <button
+                                  onClick={() => updateGroupStat('putts', playerPutts !== null ? Math.min(10, playerPutts + 1) : 1)}
+                                  className="w-5 h-5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold"
+                                >+</button>
+                              </div>
                             </div>
                           </div>
                         );
@@ -1161,9 +1362,35 @@ export default function Scoring() {
                       {playersInMatch.map((player, idx) => {
                         const existingPlayerScore = existingScores?.find(s => s.playerId === player.id && s.holeNumber === currentHole);
                         const playerUnsaved = matchScores[selectedMatchNumber]?.[player.id]?.[currentHole];
-                        const currentScore = playerUnsaved !== undefined ? playerUnsaved : (existingPlayerScore?.grossScore) || 0;
+                        const currentScore = playerUnsaved?.strokes ?? (existingPlayerScore?.grossScore) ?? 0;
                         const scoreColor = getScoreColor(currentScore, currentHoleData.par);
-                        const isSaved = existingPlayerScore && playerUnsaved === undefined;
+                        const isSaved = existingPlayerScore && !playerUnsaved;
+
+                        const playerGir = playerUnsaved?.gir ?? existingPlayerScore?.gir ?? null;
+                        const playerFir = playerUnsaved?.fir ?? existingPlayerScore?.fir ?? null;
+                        const playerPutts = playerUnsaved?.putts ?? existingPlayerScore?.putts ?? null;
+
+                        const updateMatchStat = (field: 'gir' | 'fir' | 'putts', value: any) => {
+                          setMatchScores(prev => {
+                            const existing = prev[selectedMatchNumber]?.[player.id]?.[currentHole];
+                            return {
+                              ...prev,
+                              [selectedMatchNumber]: {
+                                ...prev[selectedMatchNumber],
+                                [player.id]: {
+                                  ...(prev[selectedMatchNumber]?.[player.id] || {}),
+                                  [currentHole]: {
+                                    strokes: existing?.strokes ?? (currentScore || 4),
+                                    gir: existing?.gir ?? playerGir,
+                                    fir: existing?.fir ?? playerFir,
+                                    putts: existing?.putts ?? playerPutts,
+                                    [field]: value,
+                                  }
+                                }
+                              }
+                            };
+                          });
+                        };
 
                         return (
                           <div key={player.id} className="p-4 space-y-4 flex-1">
@@ -1190,14 +1417,18 @@ export default function Scoring() {
                                 variant="outline"
                                 className="h-12 w-12 rounded-full border-2 text-2xl font-light"
                                 onClick={() => {
-                                  const newStrokes = Math.max(1, (playerUnsaved !== undefined ? playerUnsaved : currentScore || 4) - 1);
+                                  const base = playerUnsaved?.strokes ?? (currentScore || 4);
+                                  const newStrokes = Math.max(1, base - 1);
                                   setMatchScores(prev => ({
                                     ...prev,
                                     [selectedMatchNumber]: {
                                       ...prev[selectedMatchNumber],
                                       [player.id]: {
                                         ...(prev[selectedMatchNumber]?.[player.id] || {}),
-                                        [currentHole]: newStrokes
+                                        [currentHole]: {
+                                          ...prev[selectedMatchNumber]?.[player.id]?.[currentHole],
+                                          strokes: newStrokes,
+                                        }
                                       }
                                     }
                                   }));
@@ -1217,14 +1448,18 @@ export default function Scoring() {
                                 variant="outline"
                                 className="h-12 w-12 rounded-full border-2 text-2xl font-light"
                                 onClick={() => {
-                                  const newStrokes = Math.min(15, (playerUnsaved !== undefined ? playerUnsaved : currentScore || 4) + 1);
+                                  const base = playerUnsaved?.strokes ?? (currentScore || 4);
+                                  const newStrokes = Math.min(15, base + 1);
                                   setMatchScores(prev => ({
                                     ...prev,
                                     [selectedMatchNumber]: {
                                       ...prev[selectedMatchNumber],
                                       [player.id]: {
                                         ...(prev[selectedMatchNumber]?.[player.id] || {}),
-                                        [currentHole]: newStrokes
+                                        [currentHole]: {
+                                          ...prev[selectedMatchNumber]?.[player.id]?.[currentHole],
+                                          strokes: newStrokes,
+                                        }
                                       }
                                     }
                                   }));
@@ -1232,6 +1467,46 @@ export default function Scoring() {
                               >
                                 +
                               </Button>
+                            </div>
+
+                            {/* Compact Stats */}
+                            <div className="flex items-center justify-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-emerald-600 font-medium">G</span>
+                                <button
+                                  onClick={() => updateMatchStat('gir', playerGir === true ? null : true)}
+                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
+                                >&#10003;</button>
+                                <button
+                                  onClick={() => updateMatchStat('gir', playerGir === false ? null : false)}
+                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                >&#10007;</button>
+                              </div>
+                              {currentHoleData.par !== 3 && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-blue-600 font-medium">F</span>
+                                  <button
+                                    onClick={() => updateMatchStat('fir', playerFir === true ? null : true)}
+                                    className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400")}
+                                  >&#10003;</button>
+                                  <button
+                                    onClick={() => updateMatchStat('fir', playerFir === false ? null : false)}
+                                    className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                  >&#10007;</button>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-slate-500 font-medium">P</span>
+                                <button
+                                  onClick={() => updateMatchStat('putts', playerPutts !== null ? Math.max(0, playerPutts - 1) : 0)}
+                                  className="w-5 h-5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold"
+                                >-</button>
+                                <span className="text-[10px] font-bold w-4 text-center">{playerPutts ?? '-'}</span>
+                                <button
+                                  onClick={() => updateMatchStat('putts', playerPutts !== null ? Math.min(10, playerPutts + 1) : 1)}
+                                  className="w-5 h-5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold"
+                                >+</button>
+                              </div>
                             </div>
                           </div>
                         );

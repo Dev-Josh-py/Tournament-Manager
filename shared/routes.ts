@@ -71,6 +71,9 @@ export const api = {
         holeNumber: z.number(),
         grossScore: z.number(),
         isPick9: z.boolean().optional(),
+        gir: z.boolean().nullable().optional(),
+        fir: z.boolean().nullable().optional(),
+        putts: z.number().int().min(0).max(10).nullable().optional(),
       }),
       responses: {
         200: z.custom<typeof scores.$inferSelect>(),
