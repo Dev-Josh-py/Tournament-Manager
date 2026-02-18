@@ -408,6 +408,33 @@ export function useUpsertMatchPairings() {
   });
 }
 
+export function useSetMatchWinner() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ matchId, winnerId }: { matchId: number; winnerId: number }) => {
+      const url = `/api/match-pairings/${matchId}/winner`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ winnerId }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to set match winner");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.matchPairings.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.leaderboard.tournament.path] });
+      queryClient.invalidateQueries({ queryKey: [api.leaderboard.round.path] });
+    },
+  });
+}
+
 export function useDeleteMatchPairings() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -6,7 +6,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Info, Settings, Users, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar, MapPin, Info, Settings, Users, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { clsx } from "clsx";
 
@@ -116,6 +116,7 @@ export default function Schedule() {
       case "combined_stableford": return "bg-purple-100 text-purple-800 border-purple-200";
       case "better_ball_stableford": return "bg-amber-100 text-amber-800 border-amber-200";
       case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200";
+      case "individual_stableford": return "bg-orange-100 text-orange-800 border-orange-200";
       default: return "bg-slate-100 text-slate-800 border-slate-200";
     }
   };
@@ -146,7 +147,7 @@ export default function Schedule() {
                       {round.formatType === 'individual_match_play' && (
                         <MatchesStatusIndicator roundId={round.id} />
                       )}
-                      {round.formatType !== 'individual_match_play' && round.formatType !== 'individual_net' && round.formatType !== 'pick_9' && (
+                      {round.formatType !== 'individual_match_play' && round.formatType !== 'individual_net' && round.formatType !== 'individual_stableford' && round.formatType !== 'pick_9' && (
                         <GroupingsStatusIndicator roundId={round.id} />
                       )}
                       {round.formatType === 'pick_9' && (
@@ -168,6 +169,12 @@ export default function Schedule() {
                     <Calendar className="w-4 h-4" />
                     <span>{round.date}</span>
                   </div>
+                  {round.teeTime && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="w-4 h-4" />
+                      <span>Tee Times: {round.teeTime}</span>
+                    </div>
+                  )}
                   
                   <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2">
                     <div className="flex items-center justify-between">
@@ -201,6 +208,13 @@ export default function Schedule() {
                         <Button variant="outline" size="sm" className="w-full">
                           <Users className="w-4 h-4 mr-2" />
                           Assign Pick 9
+                        </Button>
+                      </Link>
+                    ) : round.formatType === 'individual_stableford' ? (
+                      <Link href={`/grouping-setup?round=${round.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Users className="w-4 h-4 mr-2" />
+                          Configure Groupings
                         </Button>
                       </Link>
                     ) : (

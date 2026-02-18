@@ -178,6 +178,21 @@ export async function registerRoutes(
     }
   });
 
+  app.put(api.matchPairings.setWinner.path, async (req, res) => {
+    try {
+      const matchId = Number(req.params.matchId);
+      const { winnerId } = api.matchPairings.setWinner.input.parse(req.body);
+      const updated = await storage.setMatchWinner(matchId, winnerId);
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: err.errors[0].message });
+      } else {
+        res.status(500).json({ message: (err as Error).message });
+      }
+    }
+  });
+
   // Pick 9 Assignments
   app.get('/api/rounds/:roundId/pick9-assignments', async (req, res) => {
     try {
@@ -417,12 +432,12 @@ async function seedDatabase() {
 
   // 4. Create Rounds
   const schedule = [
-    { day: "Saturday Feb 21", courseIdx: 0, format: "individual_net", desc: "Individual Net Stroke Play (6 players)" },
-    { day: "Sunday Feb 22 (AM)", courseIdx: 1, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
-    { day: "Sunday Feb 22 (PM)", courseIdx: 4, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
-    { day: "Monday Feb 23 (AM)", courseIdx: 3, format: "combined_stableford", desc: "Combined Stableford (Add both players' points)" },
-    { day: "Monday Feb 23 (PM)", courseIdx: 5, format: "better_ball_stableford", desc: "Better Ball Stableford (Best score per hole)" },
-    { day: "Tuesday Feb 24", courseIdx: 6, format: "pick_9", desc: "Pick 9 Consecutive Holes Stableford" },
+    { day: "Saturday Feb 21", courseIdx: 0, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)", teeTime: "13:00 & 13:10" },
+    { day: "Sunday Feb 22 (AM)", courseIdx: 1, format: "better_ball_stableford", desc: "Better Ball Stableford (Best score per hole)", teeTime: "7:40 & 7:50" },
+    { day: "Sunday Feb 22 (PM)", courseIdx: 4, format: "better_ball_stableford", desc: "Better Ball Stableford (Best score per hole)", teeTime: "14:00 & 14:10" },
+    { day: "Monday Feb 23 (AM)", courseIdx: 3, format: "pick_9", desc: "Pick 9 Consecutive Holes Stableford", teeTime: "7:48 & 7:56" },
+    { day: "Monday Feb 23 (PM)", courseIdx: 2, format: "individual_stableford", desc: "Individual Stableford (6 players ranked)", teeTime: "14:20 & 14:30" },
+    { day: "Tuesday Feb 24", courseIdx: 5, format: "combined_stableford", desc: "Combined Stableford (Add both players' points)", teeTime: "9:00 & 9:10" },
   ];
 
   for (let i = 0; i < schedule.length; i++) {
@@ -431,6 +446,7 @@ async function seedDatabase() {
       courseId: createdCourses[item.courseIdx].id,
       roundNumber: i + 1,
       date: item.day,
+      teeTime: item.teeTime,
       formatType: item.format,
       description: item.desc,
       isCompleted: false
