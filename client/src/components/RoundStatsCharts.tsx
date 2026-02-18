@@ -77,7 +77,7 @@ function ScoreTick({ x, y, payload }: any) {
   );
 }
 
-// Donut — % is rendered inside the SVG via recharts Label so it's always centered
+// Compact donut — fixed 100×100 px chart so it never overflows on mobile
 function DonutStat({
   hit, miss, label, color,
 }: { hit: number; miss: number; label: string; color: string }) {
@@ -86,59 +86,52 @@ function DonutStat({
   const data  = [{ value: hit }, { value: Math.max(miss, 0) }];
 
   return (
-    <Card className="border-0 shadow-sm bg-white">
-      <CardContent className="p-3 flex flex-col items-center gap-1.5">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+    <div className="flex flex-col items-center gap-1">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
 
-        {/* ResponsiveContainer lets the donut fill available width on any screen */}
-        <div className="w-full" style={{ height: 120 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius="38%"
-                outerRadius="58%"
-                dataKey="value"
-                startAngle={90}
-                endAngle={-270}
-                strokeWidth={0}
-              >
-                <Cell fill={color} />
-                <Cell fill="#e2e8f0" />
-                {/* Center label rendered inside the SVG — always visible */}
-                <Label
-                  content={({ viewBox }) => {
-                    const { cx = 0, cy = 0 } = (viewBox as { cx?: number; cy?: number }) ?? {};
-                    return (
-                      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central">
-                        <tspan
-                          style={{ fontSize: 20, fontWeight: 800, fill: color }}
-                        >
-                          {pct}%
-                        </tspan>
-                      </text>
-                    );
-                  }}
-                />
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+      {/* Fixed-size PieChart so it never overflows on mobile */}
+      <div style={{ width: 100, height: 100 }}>
+        <PieChart width={100} height={100}>
+          <Pie
+            data={data}
+            cx={50}
+            cy={50}
+            innerRadius={28}
+            outerRadius={44}
+            dataKey="value"
+            startAngle={90}
+            endAngle={-270}
+            strokeWidth={0}
+          >
+            <Cell fill={color} />
+            <Cell fill="#e2e8f0" />
+            <Label
+              content={({ viewBox }) => {
+                const { cx = 50, cy = 50 } = (viewBox as { cx?: number; cy?: number }) ?? {};
+                return (
+                  <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central">
+                    <tspan style={{ fontSize: 16, fontWeight: 800, fill: color }}>
+                      {pct}%
+                    </tspan>
+                  </text>
+                );
+              }}
+            />
+          </Pie>
+        </PieChart>
+      </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-            <span className="text-[10px] font-semibold text-slate-700">HIT {hit}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
-            <span className="text-[10px] font-semibold text-slate-500">MISS {miss}</span>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+          <span className="text-[9px] font-semibold text-slate-600">HIT {hit}</span>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-slate-200" />
+          <span className="text-[9px] font-semibold text-slate-500">MISS {miss}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -260,7 +253,7 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
                   tickLine={false}
                   interval={0}
                 />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={46} minPointSize={3}>
+                <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={46} minPointSize={0}>
                   {scoreDistData.map((entry, idx) => (
                     <Cell key={idx} fill={entry.count > 0 ? entry.color : "#f1f5f9"} />
                   ))}
@@ -284,30 +277,37 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
         </CardContent>
       </Card>
 
-      {/* ── FIR + GIR Donuts ────────────────────────────────────── */}
+      {/* ── FIR + GIR — single compact card ────────────────────── */}
       {hasFirGir && (
-        <div className={
-          firTracked > 0 && girTracked > 0
-            ? "grid grid-cols-2 gap-3"
-            : "flex justify-center"
-        }>
-          {firTracked > 0 && (
-            <DonutStat
-              hit={firHits}
-              miss={firTracked - firHits}
-              label="Fairways (FIR)"
-              color="#3b82f6"
-            />
-          )}
-          {girTracked > 0 && (
-            <DonutStat
-              hit={girHits}
-              miss={girTracked - girHits}
-              label="Greens (GIR)"
-              color="#22c55e"
-            />
-          )}
-        </div>
+        <Card className="border-0 shadow-sm bg-white">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">
+              Fairways &amp; Greens
+            </p>
+            <div className={
+              firTracked > 0 && girTracked > 0
+                ? "grid grid-cols-2 gap-2"
+                : "flex justify-center"
+            }>
+              {firTracked > 0 && (
+                <DonutStat
+                  hit={firHits}
+                  miss={firTracked - firHits}
+                  label="Fairways (FIR)"
+                  color="#3b82f6"
+                />
+              )}
+              {girTracked > 0 && (
+                <DonutStat
+                  hit={girHits}
+                  miss={girTracked - girHits}
+                  label="Greens (GIR)"
+                  color="#22c55e"
+                />
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ── Putts per Hole ──────────────────────────────────────── */}
