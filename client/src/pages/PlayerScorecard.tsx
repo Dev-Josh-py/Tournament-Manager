@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams } from "wouter";
+import { useState } from "react";
+import { useParams, useLocation } from "wouter";
 import { usePlayers, useRounds, useScores, useUpdatePlayerHandicap, useRoundHandicaps, useSubmitScore } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
@@ -7,7 +7,6 @@ import { PageTransition } from "@/components/PageTransition";
 import { ScoreboardTable } from "@/components/ScoreboardTable";
 import { RoundStatsCharts } from "@/components/RoundStatsCharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,11 +15,26 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Edit2, X, Check, ChevronRight } from "lucide-react";
 import { clsx } from "clsx";
 
+const formatTypeName = (type: string) =>
+  type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+const getFormatBadgeColor = (formatType: string) => {
+  switch (formatType) {
+    case "individual_net": return "bg-blue-100 text-blue-800 border-blue-200";
+    case "individual_match_play": return "bg-rose-100 text-rose-800 border-rose-200";
+    case "combined_stableford": return "bg-purple-100 text-purple-800 border-purple-200";
+    case "better_ball_stableford": return "bg-amber-100 text-amber-800 border-amber-200";
+    case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200";
+    case "individual_stableford": return "bg-orange-100 text-orange-800 border-orange-200";
+    default: return "bg-slate-100 text-slate-800 border-slate-200";
+  }
+};
+
 export default function PlayerScorecard() {
   const params = useParams();
   const playerId = params?.id ? Number(params.id) : null;
+  const [, navigate] = useLocation();
 
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>(playerId ? String(playerId) : "");
   const [selectedRoundId, setSelectedRoundId] = useState<string>("");
   const [editingHandicap, setEditingHandicap] = useState<boolean>(false);
   const [newHandicap, setNewHandicap] = useState<string>("");
@@ -30,15 +44,7 @@ export default function PlayerScorecard() {
   const updateHandicap = useUpdatePlayerHandicap();
   const { toast } = useToast();
 
-  // Set selectedPlayerId from URL params on mount
-  useEffect(() => {
-    if (playerId && !selectedPlayerId) {
-      setSelectedPlayerId(String(playerId));
-    }
-  }, [playerId]);
-
-  const selectedPlayer = players?.find(p => p.id === Number(selectedPlayerId));
-  const selectedRound = rounds?.find(r => r.id === Number(selectedRoundId));
+  const selectedPlayer = playerId ? players?.find(p => p.id === playerId) : null;
 
   const handleSaveHandicap = async () => {
     if (!selectedPlayer) return;
@@ -84,22 +90,14 @@ export default function PlayerScorecard() {
       <PageTransition>
         <main className="max-w-2xl mx-auto px-2 sm:px-4 space-y-4 sm:space-y-6">
 
-          {/* Player Selection */}
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground ml-1">Select Player</Label>
-            <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
-              <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700">
-                <SelectValue placeholder="Choose a player..." />
-              </SelectTrigger>
-              <SelectContent className="z-[100] bg-white dark:bg-slate-800 dark:border-slate-700 backdrop-blur-sm">
-                {players?.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.name} (HCP Index: {p.handicap}) - {p.team?.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Back navigation */}
+          <Button
+            variant="ghost"
+            className="pl-0 text-muted-foreground -mb-2"
+            onClick={() => navigate("/players")}
+          >
+            ← Players
+          </Button>
 
           {selectedPlayer ? (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -214,10 +212,7 @@ export default function PlayerScorecard() {
             </div>
           ) : (
             <div className="text-center py-16 text-muted-foreground">
-              <div className="bg-slate-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">👤</span>
-              </div>
-              <p>Select a player to view their scorecard</p>
+              <p>Player not found.</p>
             </div>
           )}
 
@@ -239,7 +234,9 @@ function RoundListCard({
   onClick: () => void
 }) {
   const { data: scores } = useScores(round.id);
+  const { data: handicaps } = useRoundHandicaps(round.id);
   const playerScores = scores?.filter((s: any) => s.playerId === playerId) || [];
+  const courseHandicap = handicaps?.find((h: any) => h.playerId === playerId)?.courseHandicap;
   const totalGross = playerScores.reduce((s: number, p: any) => s + (p.grossScore || 0), 0);
   const totalPts = playerScores.reduce((s: number, p: any) => s + (p.stablefordPoints || 0), 0);
 
@@ -251,21 +248,25 @@ function RoundListCard({
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-0.5">
               <h3 className="font-bold text-sm sm:text-base truncate">
                 R{round.roundNumber}: {round.course.name}
               </h3>
-              <Badge variant="outline" className="dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 text-[10px] flex-shrink-0">
-                {round.formatType.replace(/_/g, ' ')}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{round.date}</span>
+              <Badge className={clsx("text-[10px] border", getFormatBadgeColor(round.formatType))}>
+                {formatTypeName(round.formatType)}
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">{round.date}</p>
           </div>
-          <div className="text-right flex-shrink-0">
+          <div className="text-right flex-shrink-0 space-y-0.5">
             {playerScores.length > 0 ? (
               <>
-                <div className="text-sm font-bold">{totalGross} gross</div>
-                <div className="text-xs text-muted-foreground">{totalPts} pts</div>
+                <div className="text-lg font-bold leading-none">{totalGross}</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {courseHandicap !== undefined ? `CH ${courseHandicap}` : ''}{courseHandicap !== undefined && ' · '}{totalPts} pts
+                </div>
               </>
             ) : (
               <div className="text-xs text-muted-foreground">No scores</div>
@@ -312,7 +313,7 @@ function RoundSummaryCard({
             </h3>
             <p className="text-[10px] sm:text-xs text-muted-foreground">{round.date}</p>
           </div>
-          <Badge variant="outline" className="dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 text-[10px] sm:text-xs flex-shrink-0">{round.formatType.replace(/_/g, ' ')}</Badge>
+          <Badge className={clsx("text-[10px] sm:text-xs border flex-shrink-0", getFormatBadgeColor(round.formatType))}>{formatTypeName(round.formatType)}</Badge>
         </div>
 
         <ScoreboardTable
