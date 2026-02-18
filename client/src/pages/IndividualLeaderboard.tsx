@@ -158,7 +158,7 @@ export default function IndividualLeaderboard() {
       .map((p, idx) => ({ ...p, rank: idx + 1 }));
 
     return standings;
-  }, [players, rounds, allScoresData, roundIds]);
+  }, [players, rounds, allScoresData]);
 
   const getToParColor = (toPar: number) => {
     if (toPar <= -8) return "text-amber-500"; // Eagle+

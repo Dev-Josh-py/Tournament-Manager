@@ -149,6 +149,8 @@ export function useSubmitScore() {
       queryClient.invalidateQueries({ queryKey: [api.scores.list.path, variables.roundId] });
       queryClient.invalidateQueries({ queryKey: [api.leaderboard.tournament.path] });
       queryClient.invalidateQueries({ queryKey: [api.leaderboard.round.path, variables.roundId] });
+      // Invalidate all-rounds-scores cache used by Individual Leaderboard stats/standings
+      queryClient.invalidateQueries({ queryKey: ['all-rounds-scores'] });
     },
   });
 }
