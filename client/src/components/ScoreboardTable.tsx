@@ -43,26 +43,32 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
     const base = "inline-flex items-center justify-center w-6 h-6 text-xs font-bold leading-none";
 
     if (diff <= -2) {
-      // Eagle: double circle (amber)
+      // Eagle: double circle — white gap between inner border and outer ring
       return (
         <span
-          className={`${base} rounded-full border-2 border-amber-600 bg-amber-100 text-amber-700`}
-          style={{ boxShadow: "0 0 0 2px #d97706" }}
+          className={`${base} rounded-full border-2 border-amber-600 text-amber-700`}
+          style={{
+            background: "rgba(245,158,11,0.12)",
+            boxShadow: "0 0 0 1px white, 0 0 0 3px #d97706",
+          }}
         >
           {score}
         </span>
       );
     }
     if (diff === -1) {
-      // Birdie: single circle with red border
+      // Birdie: single circle, very light tint
       return (
-        <span className={`${base} rounded-full border-2 border-red-600 bg-red-50 text-red-700`}>
+        <span
+          className={`${base} rounded-full border-2 border-red-600 text-red-700`}
+          style={{ background: "rgba(239,68,68,0.10)" }}
+        >
           {score}
         </span>
       );
     }
     if (diff === 0) {
-      // Par: shaded, no border
+      // Par: standard shading, no border (unchanged)
       return (
         <span className={`${base} rounded bg-gray-100 text-gray-900`}>
           {score}
@@ -70,18 +76,24 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
       );
     }
     if (diff === 1) {
-      // Bogey: square with blue border
+      // Bogey: square with blue border, very light tint
       return (
-        <span className={`${base} border-2 border-blue-500 bg-blue-50 text-blue-600`}>
+        <span
+          className={`${base} border-2 border-blue-500 text-blue-600`}
+          style={{ background: "rgba(59,130,246,0.10)" }}
+        >
           {score}
         </span>
       );
     }
-    // Double+: double square (dark blue)
+    // Double+: double square — light bg so white-gap double border is visible
     return (
       <span
-        className={`${base} border-2 border-blue-900 bg-blue-900 text-white`}
-        style={{ boxShadow: "0 0 0 2px #1e40af" }}
+        className={`${base} border-2 border-blue-800 text-blue-900`}
+        style={{
+          background: "rgba(30,64,175,0.10)",
+          boxShadow: "0 0 0 1px white, 0 0 0 3px #1e40af",
+        }}
       >
         {score}
       </span>
