@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { useTournamentLeaderboard, useRounds, useRoundLeaderboard, useMatchPairings, useScores, usePlayers, useSetMatchWinner } from "@/hooks/use-tournament";
+import { useState, useMemo } from "react";
+import { useTournamentLeaderboard, useRounds, useRoundLeaderboard, useMatchPairings, useScores, usePlayers, useSetMatchWinner, useAllRoundsScores } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
 import { TeamBadge } from "@/components/TeamBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trophy, Medal, AlertCircle, Swords, TrendingDown, TrendingUp, ChevronDown } from "lucide-react";
+import { Trophy, Medal, AlertCircle, Swords, TrendingDown, TrendingUp, ChevronDown, Target } from "lucide-react";
 import { clsx } from "clsx";
 import type { Round, Score, MatchPairing, PlayerBreakdown } from "@shared/schema";
 
@@ -44,10 +44,11 @@ export default function Leaderboard() {
           )}
 
           <Tabs defaultValue="overall" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 mb-6 bg-slate-200 dark:bg-slate-800 p-1">
-              <TabsTrigger value="overall" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-foreground dark:data-[state=active]:text-white">Tournament</TabsTrigger>
-              <TabsTrigger value="live-matches" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-foreground dark:data-[state=active]:text-white">Live Matches</TabsTrigger>
-              <TabsTrigger value="rounds" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-foreground dark:data-[state=active]:text-white">By Round</TabsTrigger>
+            <TabsList className="w-full grid grid-cols-4 mb-6 bg-slate-200 dark:bg-slate-800 p-1">
+              <TabsTrigger value="overall" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-foreground dark:data-[state=active]:text-white text-xs">Tournament</TabsTrigger>
+              <TabsTrigger value="live-matches" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-foreground dark:data-[state=active]:text-white text-xs">Matches</TabsTrigger>
+              <TabsTrigger value="rounds" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-foreground dark:data-[state=active]:text-white text-xs">By Round</TabsTrigger>
+              <TabsTrigger value="stats" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-foreground dark:data-[state=active]:text-white text-xs">Stats</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overall" className="space-y-4">
@@ -134,6 +135,10 @@ export default function Leaderboard() {
                 </div>
               ))}
             </TabsContent>
+
+            <TabsContent value="stats">
+              <PlayerStatsTab rounds={rounds} />
+            </TabsContent>
           </Tabs>
 
         </main>
@@ -193,6 +198,13 @@ function TournamentTeamExpanded({ teamId, rounds }: { teamId: number; rounds: Ro
   );
 }
 
+function ordinalSuffix(rank: number): string {
+  if (rank === 1) return "1st";
+  if (rank === 2) return "2nd";
+  if (rank === 3) return "3rd";
+  return `${rank}th`;
+}
+
 function TournamentRoundRow({ round, teamId }: { round: Round; teamId: number }) {
   const { data } = useRoundLeaderboard(round.id);
 
@@ -207,7 +219,12 @@ function TournamentRoundRow({ round, teamId }: { round: Round; teamId: number })
         <span className="text-[11px] font-semibold text-slate-600">
           R{round.roundNumber}: {FORMAT_LABELS[round.formatType] || round.formatType} ({round.course?.name})
         </span>
-        <span className="text-xs font-bold text-primary">+{teamEntry.points}</span>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded px-1 py-0.5">
+            {ordinalSuffix(teamEntry.rank)}
+          </span>
+          <span className="text-xs font-bold text-primary">+{teamEntry.points}</span>
+        </div>
       </div>
       {breakdowns.map((b) => (
         <PlayerBreakdownRow key={b.playerId} breakdown={b} />
@@ -702,6 +719,156 @@ function MatchRoundScorecard({ roundId }: MatchRoundScorecardProps) {
           playerNames={playerNames}
         />
       ))}
+    </div>
+  );
+}
+
+// ============================================
+// Stats Summary Tab
+// ============================================
+
+interface PlayerStatSummary {
+  playerId: number;
+  playerName: string;
+  teamName: string;
+  teamColor?: string;
+  firHits: number;
+  firTracked: number;
+  girHits: number;
+  girTracked: number;
+  totalPutts: number;
+  puttsTracked: number;
+}
+
+function PlayerStatsTab({ rounds }: { rounds?: Round[] }) {
+  const { data: players } = usePlayers();
+  const roundIds = rounds?.map(r => r.id) || [];
+  const { data: allScoresData } = useAllRoundsScores(roundIds);
+
+  const stats = useMemo<PlayerStatSummary[]>(() => {
+    if (!players || !allScoresData || allScoresData.length === 0) return [];
+
+    const statsMap = new Map<number, PlayerStatSummary>();
+    players.forEach(player => {
+      statsMap.set(player.id, {
+        playerId: player.id,
+        playerName: player.name,
+        teamName: player.team?.name || "",
+        teamColor: player.team?.color,
+        firHits: 0, firTracked: 0,
+        girHits: 0, girTracked: 0,
+        totalPutts: 0, puttsTracked: 0,
+      });
+    });
+
+    allScoresData.forEach(roundScores => {
+      roundScores.forEach((score: Score) => {
+        if (score.playerId == null) return;
+        const entry = statsMap.get(score.playerId);
+        if (!entry) return;
+        if (score.fir !== null && score.fir !== undefined) {
+          entry.firTracked++;
+          if (score.fir) entry.firHits++;
+        }
+        if (score.gir !== null && score.gir !== undefined) {
+          entry.girTracked++;
+          if (score.gir) entry.girHits++;
+        }
+        if (score.putts !== null && score.putts !== undefined) {
+          entry.puttsTracked++;
+          entry.totalPutts += score.putts;
+        }
+      });
+    });
+
+    return Array.from(statsMap.values())
+      .filter(s => s.girTracked > 0 || s.firTracked > 0 || s.puttsTracked > 0);
+  }, [players, allScoresData]);
+
+  if (!rounds || rounds.length === 0) {
+    return (
+      <Card className="bg-slate-50 border-dashed shadow-none">
+        <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground text-sm">
+          <AlertCircle className="w-4 h-4" /> No rounds available
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (stats.length === 0) {
+    return (
+      <Card className="bg-slate-50 border-dashed shadow-none">
+        <CardContent className="p-4 text-center text-muted-foreground text-sm">
+          <Target className="w-8 h-8 mx-auto mb-2 opacity-30" />
+          <p>No FIR/GIR/Putts data recorded yet.</p>
+          <p className="text-xs mt-1">Stats are tracked during score entry.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 gap-1 px-2 mb-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Player</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 text-center">FIR</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 text-center">GIR</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">Putts</span>
+      </div>
+      {stats.map(s => (
+        <Card key={s.playerId} className="border-0 shadow-sm bg-white">
+          <CardContent className="p-3">
+            <div className="grid grid-cols-4 gap-1 items-center">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.teamColor }} />
+                  <span className="text-xs font-semibold text-slate-900 truncate">{s.playerName}</span>
+                </div>
+                <span className="text-[10px] text-slate-500 ml-3.5">{s.teamName}</span>
+              </div>
+              <div className="text-center">
+                {s.firTracked > 0 ? (
+                  <>
+                    <div className="text-sm font-bold text-blue-600">
+                      {Math.round((s.firHits / s.firTracked) * 100)}%
+                    </div>
+                    <div className="text-[9px] text-slate-500">{s.firHits}/{s.firTracked}</div>
+                  </>
+                ) : (
+                  <span className="text-xs text-slate-400">—</span>
+                )}
+              </div>
+              <div className="text-center">
+                {s.girTracked > 0 ? (
+                  <>
+                    <div className="text-sm font-bold text-emerald-600">
+                      {Math.round((s.girHits / s.girTracked) * 100)}%
+                    </div>
+                    <div className="text-[9px] text-slate-500">{s.girHits}/{s.girTracked}</div>
+                  </>
+                ) : (
+                  <span className="text-xs text-slate-400">—</span>
+                )}
+              </div>
+              <div className="text-center">
+                {s.puttsTracked > 0 ? (
+                  <>
+                    <div className="text-sm font-bold text-slate-700">
+                      {(s.totalPutts / s.puttsTracked).toFixed(1)}
+                    </div>
+                    <div className="text-[9px] text-slate-500">{s.totalPutts} total</div>
+                  </>
+                ) : (
+                  <span className="text-xs text-slate-400">—</span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+      <p className="text-[10px] text-slate-400 text-center px-2">
+        FIR = Fairways in Regulation · GIR = Greens in Regulation · Putts = avg per hole
+      </p>
     </div>
   );
 }
