@@ -43,13 +43,14 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
     const base = "inline-flex items-center justify-center w-6 h-6 text-xs font-bold leading-none";
 
     if (diff <= -2) {
-      // Eagle: double circle — white gap between inner border and outer ring
+      // Eagle: double circle — outline-offset creates a clean, consistent white gap
       return (
         <span
           className={`${base} rounded-full border-2 border-amber-600 text-amber-700`}
           style={{
             background: "rgba(245,158,11,0.12)",
-            boxShadow: "0 0 0 1px white, 0 0 0 3px #d97706",
+            outline: "2px solid #d97706",
+            outlineOffset: "2px",
           }}
         >
           {score}
@@ -86,13 +87,14 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
         </span>
       );
     }
-    // Double+: double square — light bg so white-gap double border is visible
+    // Double+: double square — outline-offset creates a clean, consistent white gap
     return (
       <span
         className={`${base} border-2 border-blue-800 text-blue-900`}
         style={{
           background: "rgba(30,64,175,0.10)",
-          boxShadow: "0 0 0 1px white, 0 0 0 3px #1e40af",
+          outline: "2px solid #1e40af",
+          outlineOffset: "2px",
         }}
       >
         {score}
@@ -185,7 +187,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                   const par = hole?.par || 4;
 
                   return (
-                    <td key={h} className="px-0.5 sm:px-1 py-1 sm:py-1.5 text-center">
+                    <td key={h} className="px-1 sm:px-1.5 py-1 sm:py-1.5 text-center">
                       {grossScore
                         ? <ScoreBadge score={grossScore} par={par} />
                         : <span className="text-slate-400 text-xs">-</span>
