@@ -198,6 +198,20 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
     { name: "D.BOG",  count: dist.double, pct: pct(dist.double), color: DIST_COLORS.double },
   ];
 
+  // ── Avg score vs par by hole type ────────────────────────────────
+  const parTypeStats = ([3, 4, 5] as const).map(par => {
+    const parScores = scores.filter(s => {
+      const h = holes.find(h => h.number === s.holeNumber);
+      return h?.par === par && s.grossScore;
+    });
+    if (parScores.length === 0) return null;
+    const avgToPar = parScores.reduce((sum, s) => {
+      const h = holes.find(h => h.number === s.holeNumber);
+      return sum + (s.grossScore - (h?.par ?? par));
+    }, 0) / parScores.length;
+    return { par, avgToPar, count: parScores.length };
+  }).filter((x): x is { par: 3 | 4 | 5; avgToPar: number; count: number } => x !== null);
+
   // ── FIR ──────────────────────────────────────────────────────────
   const firEligible = holes.filter(h => h.par !== 3);
   const firTracked  = firEligible.filter(h => {
@@ -275,6 +289,72 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Avg Score vs Par ────────────────────────────────────── */}
+      {parTypeStats.length > 0 && (
+        <Card className="border-0 shadow-sm bg-white">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-4">
+              Avg Score vs Par
+            </p>
+
+            <div className="space-y-3.5">
+              {(() => {
+                // Max absolute toPar determines bar scale
+                const maxVal = Math.max(...parTypeStats.map(d => Math.abs(d.avgToPar)), 0.5);
+                return parTypeStats.map(d => {
+                  const sign     = d.avgToPar >= 0 ? "+" : "";
+                  const barPct   = Math.round((Math.abs(d.avgToPar) / maxVal) * 100);
+                  // Color: under par=green, 0-1=amber, 1-2=light blue, 2+=dark blue
+                  const barColor =
+                    d.avgToPar < 0   ? "#22c55e" :
+                    d.avgToPar < 1   ? "#f59e0b" :
+                    d.avgToPar < 2   ? "#93c5fd" :
+                                       "#1e40af";
+                  const textColor =
+                    d.avgToPar < 0   ? "#16a34a" :
+                    d.avgToPar < 1   ? "#d97706" :
+                    d.avgToPar < 2   ? "#3b82f6" :
+                                       "#1e40af";
+
+                  return (
+                    <div key={d.par} className="flex items-center gap-3">
+                      {/* Label */}
+                      <span className="text-xs font-bold text-slate-600 w-11 flex-shrink-0">
+                        Par {d.par}
+                      </span>
+
+                      {/* Bar track */}
+                      <div className="flex-1 bg-slate-100 rounded-full h-3.5 overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.max(barPct, 6)}%`,
+                            backgroundColor: barColor,
+                          }}
+                        />
+                      </div>
+
+                      {/* Value */}
+                      <span
+                        className="text-xs font-bold w-12 text-right flex-shrink-0"
+                        style={{ color: textColor }}
+                      >
+                        {sign}{d.avgToPar.toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Hole counts */}
+            <p className="text-[9px] text-slate-400 mt-3 text-center">
+              {parTypeStats.map(d => `Par ${d.par}: ${d.count} hole${d.count !== 1 ? "s" : ""}`).join(" · ")}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── FIR + GIR — single compact card ────────────────────── */}
       {hasFirGir && (
