@@ -4,7 +4,7 @@ import {
   teams, players, rounds, courses, holes, scores, roundTeamPoints, roundHandicaps,
   roundGroupings, roundGroupingPlayers, matchPairings, pick9Assignments,
   type Team, type Player, type Round, type Course, type Hole, type Score, type SubmitScoreRequest,
-  type RoundLeaderboardEntry, type LeaderboardEntry, type RoundWithCourse,
+  type PlayerBreakdown, type RoundLeaderboardEntry, type LeaderboardEntry, type RoundWithCourse,
   type RoundGrouping, type RoundGroupingPlayer, type RoundGroupingWithPlayers,
   type MatchPairing, type Pick9Assignment, type MatchPairingWithPlayers
 } from "@shared/schema";
@@ -58,6 +58,7 @@ export interface IStorage {
   getMatchPairingsForRound(roundId: number): Promise<MatchPairingWithPlayers[]>;
   upsertMatchPairings(roundId: number, pairings: Array<{ matchNumber: number; player1Id: number; player2Id: number }>): Promise<{ success: boolean }>;
   deleteMatchPairings(roundId: number): Promise<{ success: boolean }>;
+  setMatchWinner(matchId: number, winnerId: number): Promise<MatchPairing>;
 
   // Pick 9 Assignments
   getPick9Assignments(roundId: number): Promise<Pick9Assignment[]>;
@@ -470,8 +471,10 @@ export class DatabaseStorage implements IStorage {
           results = await this.calculatePick9Stableford(scoresWithData, allTeams, round.id);
           break;
         case 'better_ball_stableford':
-          // Round 5 is Better Ball Stableford (max stableford per hole)
-          results = this.calculateBetterBallStableford(scoresWithData, allTeams, false, true);
+          results = this.calculateBetterBallStableford(scoresWithData, allTeams);
+          break;
+        case 'individual_stableford':
+          results = this.calculateIndividualStableford(scoresWithData, allTeams);
           break;
       }
 
@@ -514,16 +517,39 @@ export class DatabaseStorage implements IStorage {
     // 3. Allocate points to TEAMS based on player ranks
     // 1st: 10pts, 2nd: 8, 3rd: 6, 4th: 4, 5th: 2, 6th: 1
     const pointsMap = [10, 8, 6, 4, 2, 1];
-    
+
     const teamPoints = new Map<number, number>();
-    teams.forEach(t => teamPoints.set(t.id, 0));
+    const teamBreakdowns = new Map<number, PlayerBreakdown[]>();
+    teams.forEach(t => {
+      teamPoints.set(t.id, 0);
+      teamBreakdowns.set(t.id, []);
+    });
+
+    const ordinalSuffix = (n: number) => {
+      if (n === 1) return "1st";
+      if (n === 2) return "2nd";
+      if (n === 3) return "3rd";
+      return `${n}th`;
+    };
 
     rankedPlayers.forEach((rp, idx) => {
       const player = scores.find(s => s.playerId === rp.playerId)?.player;
       if (player && player.teamId) {
-        const current = teamPoints.get(player.teamId) || 0;
         const points = pointsMap[idx] || 0;
+        const current = teamPoints.get(player.teamId) || 0;
         teamPoints.set(player.teamId, current + points);
+
+        const breakdowns = teamBreakdowns.get(player.teamId) || [];
+        breakdowns.push({
+          playerId: player.id,
+          playerName: player.name,
+          teamId: player.teamId,
+          pointsEarned: points,
+          metric: playerTotals.get(rp.playerId) || 0,
+          metricLabel: "Net",
+          description: `${ordinalSuffix(idx + 1)} place`,
+        });
+        teamBreakdowns.set(player.teamId, breakdowns);
       }
     });
 
@@ -532,8 +558,9 @@ export class DatabaseStorage implements IStorage {
       teamId: t.id,
       teamName: t.name,
       points: teamPoints.get(t.id) || 0,
-      scoreMetric: teamPoints.get(t.id) || 0, // Metric is points earned in this case
-      rank: 0 // Will resort outside
+      scoreMetric: teamPoints.get(t.id) || 0,
+      rank: 0,
+      playerBreakdown: teamBreakdowns.get(t.id) || [],
     })).sort((a, b) => b.points - a.points).map((r, i) => ({ ...r, rank: i + 1 }));
   }
 
@@ -548,20 +575,30 @@ export class DatabaseStorage implements IStorage {
         teamName: t.name,
         points: 0,
         scoreMetric: 0,
-        rank: 0
+        rank: 0,
+        playerBreakdown: [],
       }));
     }
 
     const teamPoints = new Map<number, number>();
-    teams.forEach(t => teamPoints.set(t.id, 0));
+    const teamBreakdowns = new Map<number, PlayerBreakdown[]>();
+    teams.forEach(t => {
+      teamPoints.set(t.id, 0);
+      teamBreakdowns.set(t.id, []);
+    });
 
     // Process each match
     for (const pairing of pairings) {
-      // Get player teams
-      const player1Team = scores.find(s => s.playerId === pairing.player1Id)?.player?.teamId;
-      const player2Team = scores.find(s => s.playerId === pairing.player2Id)?.player?.teamId;
+      // Get player info
+      const player1Data = scores.find(s => s.playerId === pairing.player1Id)?.player;
+      const player2Data = scores.find(s => s.playerId === pairing.player2Id)?.player;
+      const player1Team = player1Data?.teamId;
+      const player2Team = player2Data?.teamId;
 
       if (!player1Team || !player2Team) continue;
+
+      const player1Name = player1Data?.name || `Player ${pairing.player1Id}`;
+      const player2Name = player2Data?.name || `Player ${pairing.player2Id}`;
 
       // Compare Stableford points hole-by-hole
       let player1HolesWon = 0;
@@ -587,26 +624,68 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Determine match winner and award team points
-      // Win = 6 points, Draw = 3 points, Loss = 1.5 points
+      let p1Earned = 0;
+      let p2Earned = 0;
+      let p1Desc = "";
+      let p2Desc = "";
+
       if (player1HolesWon > player2HolesWon) {
-        // Player 1's team wins
-        const p1Current = teamPoints.get(player1Team) || 0;
-        const p2Current = teamPoints.get(player2Team) || 0;
-        teamPoints.set(player1Team, p1Current + 6);
-        teamPoints.set(player2Team, p2Current + 1.5);
+        p1Earned = 8; p2Earned = 3;
+        p1Desc = `Won vs ${player2Name}`;
+        p2Desc = `Lost vs ${player1Name}`;
+        teamPoints.set(player1Team, (teamPoints.get(player1Team) || 0) + 8);
+        teamPoints.set(player2Team, (teamPoints.get(player2Team) || 0) + 3);
       } else if (player2HolesWon > player1HolesWon) {
-        // Player 2's team wins
-        const p1Current = teamPoints.get(player1Team) || 0;
-        const p2Current = teamPoints.get(player2Team) || 0;
-        teamPoints.set(player1Team, p1Current + 1.5);
-        teamPoints.set(player2Team, p2Current + 6);
+        p1Earned = 3; p2Earned = 8;
+        p1Desc = `Lost vs ${player2Name}`;
+        p2Desc = `Won vs ${player1Name}`;
+        teamPoints.set(player1Team, (teamPoints.get(player1Team) || 0) + 3);
+        teamPoints.set(player2Team, (teamPoints.get(player2Team) || 0) + 8);
       } else {
-        // Draw (all square)
-        const p1Current = teamPoints.get(player1Team) || 0;
-        const p2Current = teamPoints.get(player2Team) || 0;
-        teamPoints.set(player1Team, p1Current + 3);
-        teamPoints.set(player2Team, p2Current + 3);
+        // Match is drawn
+        if (pairing.winnerId) {
+          const winnerTeam = pairing.winnerId === pairing.player1Id ? player1Team : player2Team;
+          const loserTeam = pairing.winnerId === pairing.player1Id ? player2Team : player1Team;
+          teamPoints.set(winnerTeam, (teamPoints.get(winnerTeam) || 0) + 8);
+          teamPoints.set(loserTeam, (teamPoints.get(loserTeam) || 0) + 3);
+          if (pairing.winnerId === pairing.player1Id) {
+            p1Earned = 8; p2Earned = 3;
+            p1Desc = `Playoff win vs ${player2Name}`;
+            p2Desc = `Playoff loss vs ${player1Name}`;
+          } else {
+            p1Earned = 3; p2Earned = 8;
+            p1Desc = `Playoff loss vs ${player2Name}`;
+            p2Desc = `Playoff win vs ${player1Name}`;
+          }
+        } else {
+          p1Desc = `Pending playoff vs ${player2Name}`;
+          p2Desc = `Pending playoff vs ${player1Name}`;
+        }
       }
+
+      const b1 = teamBreakdowns.get(player1Team) || [];
+      b1.push({
+        playerId: pairing.player1Id,
+        playerName: player1Name,
+        teamId: player1Team,
+        pointsEarned: p1Earned,
+        metric: player1HolesWon,
+        metricLabel: "holes won",
+        description: p1Desc,
+      });
+      teamBreakdowns.set(player1Team, b1);
+
+      const b2 = teamBreakdowns.get(player2Team) || [];
+      b2.push({
+        playerId: pairing.player2Id,
+        playerName: player2Name,
+        teamId: player2Team,
+        pointsEarned: p2Earned,
+        metric: player2HolesWon,
+        metricLabel: "holes won",
+        description: p2Desc,
+      });
+      teamBreakdowns.set(player2Team, b2);
     }
 
     // Return team results
@@ -615,7 +694,8 @@ export class DatabaseStorage implements IStorage {
       teamName: t.name,
       points: teamPoints.get(t.id) || 0,
       scoreMetric: teamPoints.get(t.id) || 0,
-      rank: 0
+      rank: 0,
+      playerBreakdown: teamBreakdowns.get(t.id) || [],
     })).sort((a, b) => b.points - a.points).map((r, i) => ({ ...r, rank: i + 1 }));
   }
 
@@ -654,49 +734,60 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  private calculateBetterBallStableford(scores: any[], teams: Team[], isPick9: boolean, isChampionship: boolean): RoundLeaderboardEntry[] {
-    // Rounds 5 & 6: Better Ball Stableford (max stableford per hole)
+  private calculateBetterBallStableford(scores: any[], teams: Team[]): RoundLeaderboardEntry[] {
+    // Better Ball Stableford (max stableford per hole per team)
     const teamResults = teams.map(team => {
       let totalPoints = 0;
       const teamPlayers = scores.filter(s => s.player?.teamId === team.id);
+
+      // Calculate individual player stableford totals
+      const playerTotals = new Map<number, number>();
+      teamPlayers.forEach(s => {
+        const current = playerTotals.get(s.playerId) || 0;
+        playerTotals.set(s.playerId, current + (s.stablefordPoints || 0));
+      });
 
       // Group by hole
       for (let hole = 1; hole <= 18; hole++) {
         const holeScores = teamPlayers.filter(s => s.holeNumber === hole);
         if (holeScores.length === 0) continue;
 
-        // If Pick 9, verify isPick9 is true
-        if (isPick9) {
-          const pickedScores = holeScores.filter(s => s.isPick9);
-          if (pickedScores.length === 0) continue; // Skip hole if nobody picked it
-          // Rule: "Pick 9 holes per player". Take max of picked holes.
-          // If Player A picked it and B didn't, we take A's. If both, max.
-          const maxPoints = Math.max(...pickedScores.map(s => s.stablefordPoints || 0));
-          totalPoints += maxPoints;
-        } else {
-          const maxPoints = Math.max(...holeScores.map(s => s.stablefordPoints || 0));
-          totalPoints += maxPoints;
-        }
+        const maxPoints = Math.max(...holeScores.map(s => s.stablefordPoints || 0));
+        totalPoints += maxPoints;
       }
 
-      return { team, totalPoints };
+      // Build player breakdowns
+      const uniquePlayers = new Map<number, any>();
+      teamPlayers.forEach(s => {
+        if (s.player && !uniquePlayers.has(s.playerId)) {
+          uniquePlayers.set(s.playerId, s.player);
+        }
+      });
+
+      const breakdowns: PlayerBreakdown[] = Array.from(uniquePlayers.entries()).map(([playerId, player]) => ({
+        playerId,
+        playerName: player.name,
+        teamId: team.id,
+        pointsEarned: 0,
+        metric: playerTotals.get(playerId) || 0,
+        metricLabel: "Stableford",
+        description: "",
+      }));
+
+      return { team, totalPoints, breakdowns };
     });
 
     // Rank teams - HIGHER stableford is better
     const sorted = teamResults.sort((a, b) => b.totalPoints - a.totalPoints);
-
-    // Allocate Points:
-    // Pick 9: 1st: 15, 2nd: 8, 3rd: 4 (Round 5)
-    // Champ: 1st: 18, 2nd: 10, 3rd: 5 (Round 6)
-    let pointsDist = [15, 8, 4];
-    if (isChampionship) pointsDist = [18, 10, 5];
+    const pointsDist = [12, 9, 6];
 
     return sorted.map((res, idx) => ({
       teamId: res.team.id,
       teamName: res.team.name,
       points: pointsDist[idx] || 0,
       scoreMetric: res.totalPoints,
-      rank: idx + 1
+      rank: idx + 1,
+      playerBreakdown: res.breakdowns,
     }));
   }
 
@@ -724,6 +815,15 @@ export class DatabaseStorage implements IStorage {
       let totalPoints = 0;
       const teamPlayers = scores.filter(s => s.player?.teamId === team.id);
 
+      // Calculate individual player stableford totals for their assigned 9 holes
+      const playerTotals = new Map<number, number>();
+      teamPlayers.forEach(s => {
+        if (holeCountsForPlayer(s.playerId, s.holeNumber)) {
+          const current = playerTotals.get(s.playerId) || 0;
+          playerTotals.set(s.playerId, current + (s.stablefordPoints || 0));
+        }
+      });
+
       // Group by hole
       for (let hole = 1; hole <= 18; hole++) {
         const holeScores = teamPlayers.filter(s => s.holeNumber === hole);
@@ -738,19 +838,41 @@ export class DatabaseStorage implements IStorage {
         totalPoints += maxPoints;
       }
 
-      return { team, totalPoints };
+      // Build player breakdowns
+      const uniquePlayers = new Map<number, any>();
+      teamPlayers.forEach(s => {
+        if (s.player && !uniquePlayers.has(s.playerId)) {
+          uniquePlayers.set(s.playerId, s.player);
+        }
+      });
+
+      const breakdowns: PlayerBreakdown[] = Array.from(uniquePlayers.entries()).map(([playerId, player]) => {
+        const range = playerHoleRangeMap.get(playerId);
+        return {
+          playerId,
+          playerName: player.name,
+          teamId: team.id,
+          pointsEarned: 0,
+          metric: playerTotals.get(playerId) || 0,
+          metricLabel: "Stableford",
+          description: range === "1-9" ? "Holes 1-9" : range === "10-18" ? "Holes 10-18" : "",
+        };
+      });
+
+      return { team, totalPoints, breakdowns };
     });
 
     // Rank teams - HIGHER stableford is better
     const sorted = teamResults.sort((a, b) => b.totalPoints - a.totalPoints);
-    const pointsDist = [18, 10, 5]; // Pick 9 points
+    const pointsDist = [14, 10, 7]; // Pick 9 points
 
     return sorted.map((res, idx) => ({
       teamId: res.team.id,
       teamName: res.team.name,
       points: pointsDist[idx] || 0,
       scoreMetric: res.totalPoints,
-      rank: idx + 1
+      rank: idx + 1,
+      playerBreakdown: res.breakdowns,
     }));
   }
 
@@ -759,25 +881,51 @@ export class DatabaseStorage implements IStorage {
     const teamResults = teams.map(team => {
       let totalPoints = 0;
       const teamPlayers = scores.filter(s => s.player?.teamId === team.id);
-      
+
+      // Calculate individual player stableford totals
+      const playerTotals = new Map<number, number>();
+      teamPlayers.forEach(s => {
+        const current = playerTotals.get(s.playerId) || 0;
+        playerTotals.set(s.playerId, current + (s.stablefordPoints || 0));
+      });
+
       for (let hole = 1; hole <= 18; hole++) {
         const holeScores = teamPlayers.filter(s => s.holeNumber === hole);
         const sumPoints = holeScores.reduce((sum, s) => sum + (s.stablefordPoints || 0), 0);
         totalPoints += sumPoints;
       }
 
-      return { team, totalPoints };
+      // Build player breakdowns
+      const uniquePlayers = new Map<number, any>();
+      teamPlayers.forEach(s => {
+        if (s.player && !uniquePlayers.has(s.playerId)) {
+          uniquePlayers.set(s.playerId, s.player);
+        }
+      });
+
+      const breakdowns: PlayerBreakdown[] = Array.from(uniquePlayers.entries()).map(([playerId, player]) => ({
+        playerId,
+        playerName: player.name,
+        teamId: team.id,
+        pointsEarned: 0,
+        metric: playerTotals.get(playerId) || 0,
+        metricLabel: "Stableford",
+        description: "",
+      }));
+
+      return { team, totalPoints, breakdowns };
     });
 
     const sorted = teamResults.sort((a, b) => b.totalPoints - a.totalPoints);
-    const pointsDist = [12, 6, 3];
+    const pointsDist = [18, 12, 9];
 
     return sorted.map((res, idx) => ({
       teamId: res.team.id,
       teamName: res.team.name,
       points: pointsDist[idx] || 0,
       scoreMetric: res.totalPoints,
-      rank: idx + 1
+      rank: idx + 1,
+      playerBreakdown: res.breakdowns,
     }));
   }
 
@@ -786,36 +934,122 @@ export class DatabaseStorage implements IStorage {
     const teamResults = teams.map(team => {
       let totalPoints = 0;
       const teamPlayers = scores.filter(s => s.player?.teamId === team.id);
-      
+
+      // Calculate individual player stableford totals
+      const playerTotals = new Map<number, number>();
+      teamPlayers.forEach(s => {
+        const current = playerTotals.get(s.playerId) || 0;
+        playerTotals.set(s.playerId, current + (s.stablefordPoints || 0));
+      });
+
       for (let hole = 1; hole <= 18; hole++) {
         const holeScores = teamPlayers.filter(s => s.holeNumber === hole);
-        if (holeScores.length < 2) continue; // Need both players to calc Worst properly? Assuming 0 if missing.
+        if (holeScores.length < 2) continue;
 
         const p1 = holeScores[0]?.stablefordPoints || 0;
         const p2 = holeScores[1]?.stablefordPoints || 0;
 
         if (hole % 2 === 0) {
-          // Even: BEST score
           totalPoints += Math.max(p1, p2);
         } else {
-          // Odd: WORST score
           totalPoints += Math.min(p1, p2);
         }
       }
 
-      return { team, totalPoints };
+      // Build player breakdowns
+      const uniquePlayers = new Map<number, any>();
+      teamPlayers.forEach(s => {
+        if (s.player && !uniquePlayers.has(s.playerId)) {
+          uniquePlayers.set(s.playerId, s.player);
+        }
+      });
+
+      const breakdowns: PlayerBreakdown[] = Array.from(uniquePlayers.entries()).map(([playerId, player]) => ({
+        playerId,
+        playerName: player.name,
+        teamId: team.id,
+        pointsEarned: 0,
+        metric: playerTotals.get(playerId) || 0,
+        metricLabel: "Stableford",
+        description: "",
+      }));
+
+      return { team, totalPoints, breakdowns };
     });
 
     const sorted = teamResults.sort((a, b) => b.totalPoints - a.totalPoints);
-    const pointsDist = [15, 8, 4]; // Round 4
+    const pointsDist = [15, 8, 4];
 
     return sorted.map((res, idx) => ({
       teamId: res.team.id,
       teamName: res.team.name,
       points: pointsDist[idx] || 0,
       scoreMetric: res.totalPoints,
-      rank: idx + 1
+      rank: idx + 1,
+      playerBreakdown: res.breakdowns,
     }));
+  }
+
+  private calculateIndividualStableford(scores: any[], teams: Team[]): RoundLeaderboardEntry[] {
+    // Individual Stableford: Rank all 6 players by total Stableford points (higher is better)
+    // Award individual placement points: [10, 8, 6, 5, 3, 2]
+    // Sum each player's earned points into their team's total
+    const playerTotals = new Map<number, number>();
+    scores.forEach(s => {
+      const current = playerTotals.get(s.playerId) || 0;
+      playerTotals.set(s.playerId, current + (s.stablefordPoints || 0));
+    });
+
+    // Rank players by total stableford (higher is better)
+    const rankedPlayers = Array.from(playerTotals.entries())
+      .sort(([, a], [, b]) => b - a)
+      .map(([playerId], index) => ({ playerId, rank: index + 1 }));
+
+    const placementPoints = [10, 8, 6, 5, 3, 2];
+
+    const teamPoints = new Map<number, number>();
+    const teamBreakdowns = new Map<number, PlayerBreakdown[]>();
+    teams.forEach(t => {
+      teamPoints.set(t.id, 0);
+      teamBreakdowns.set(t.id, []);
+    });
+
+    const ordinalSuffix = (n: number) => {
+      if (n === 1) return "1st";
+      if (n === 2) return "2nd";
+      if (n === 3) return "3rd";
+      return `${n}th`;
+    };
+
+    rankedPlayers.forEach((rp, idx) => {
+      const player = scores.find(s => s.playerId === rp.playerId)?.player;
+      if (player && player.teamId) {
+        const points = placementPoints[idx] || 0;
+        const current = teamPoints.get(player.teamId) || 0;
+        teamPoints.set(player.teamId, current + points);
+
+        const breakdowns = teamBreakdowns.get(player.teamId) || [];
+        breakdowns.push({
+          playerId: player.id,
+          playerName: player.name,
+          teamId: player.teamId,
+          pointsEarned: points,
+          metric: playerTotals.get(rp.playerId) || 0,
+          metricLabel: "Stableford",
+          description: `${ordinalSuffix(idx + 1)} place`,
+        });
+        teamBreakdowns.set(player.teamId, breakdowns);
+      }
+    });
+
+    return teams.map(t => ({
+      teamId: t.id,
+      teamName: t.name,
+      points: teamPoints.get(t.id) || 0,
+      scoreMetric: teamPoints.get(t.id) || 0,
+      rank: 0,
+      playerBreakdown: teamBreakdowns.get(t.id) || [],
+    })).sort((a, b) => b.points - a.points).map((r, i) => ({ ...r, rank: i + 1 }));
   }
 
   // === GROUPINGS ===
@@ -999,6 +1233,22 @@ export class DatabaseStorage implements IStorage {
       .where(eq(matchPairings.roundId, roundId));
 
     return { success: true };
+  }
+
+  async setMatchWinner(matchId: number, winnerId: number): Promise<MatchPairing> {
+    const pairing = await db.query.matchPairings.findFirst({
+      where: eq(matchPairings.id, matchId),
+    });
+    if (!pairing) throw new Error("Match pairing not found");
+    if (winnerId !== pairing.player1Id && winnerId !== pairing.player2Id) {
+      throw new Error("Winner must be one of the players in this match");
+    }
+    const [updated] = await db
+      .update(matchPairings)
+      .set({ winnerId, isCompleted: true })
+      .where(eq(matchPairings.id, matchId))
+      .returning();
+    return updated;
   }
 
   // === PICK 9 ASSIGNMENTS ===

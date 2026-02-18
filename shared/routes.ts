@@ -112,6 +112,15 @@ export const api = {
           points: z.number(), // Allocated tournament points
           scoreMetric: z.number(), // The raw score used for ranking
           rank: z.number(),
+          playerBreakdown: z.array(z.object({
+            playerId: z.number(),
+            playerName: z.string(),
+            teamId: z.number(),
+            pointsEarned: z.number(),
+            metric: z.number(),
+            metricLabel: z.string(),
+            description: z.string(),
+          })).optional(),
         })),
       },
     },
@@ -182,6 +191,26 @@ export const api = {
       path: '/api/rounds/:roundId/match-pairings',
       responses: {
         200: z.object({ success: z.boolean() }),
+      },
+    },
+    setWinner: {
+      method: 'PUT' as const,
+      path: '/api/match-pairings/:matchId/winner',
+      input: z.object({ winnerId: z.number() }),
+      responses: {
+        200: z.object({
+          id: z.number(),
+          roundId: z.number(),
+          matchNumber: z.number(),
+          player1Id: z.number(),
+          player2Id: z.number(),
+          player1HolesWon: z.number().nullable(),
+          player2HolesWon: z.number().nullable(),
+          holesHalved: z.number().nullable(),
+          winnerId: z.number().nullable(),
+          isCompleted: z.boolean().nullable(),
+        }),
+        400: errorSchemas.validation,
       },
     },
   },

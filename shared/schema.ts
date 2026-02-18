@@ -38,7 +38,8 @@ export const rounds = pgTable("rounds", {
   courseId: integer("course_id").references(() => courses.id),
   roundNumber: integer("round_number").notNull(),
   date: text("date").notNull(), // Storing as string for display (e.g., "Saturday Feb 21")
-  formatType: text("format_type").notNull(), // 'individual_net', 'individual_match_play', 'combined_stableford', 'better_ball_stableford', 'pick_9'
+  teeTime: text("tee_time"),
+  formatType: text("format_type").notNull(), // 'individual_net', 'individual_match_play', 'combined_stableford', 'better_ball_stableford', 'pick_9', 'individual_stableford'
   description: text("description").notNull(),
   isCompleted: boolean("is_completed").default(false),
   awardsTeamPoints: boolean("awards_team_points").default(true),
@@ -242,12 +243,23 @@ export type LeaderboardEntry = {
   rank: number;
 };
 
+export type PlayerBreakdown = {
+  playerId: number;
+  playerName: string;
+  teamId: number;
+  pointsEarned: number;
+  metric: number;
+  metricLabel: string;
+  description: string;
+};
+
 export type RoundLeaderboardEntry = {
   teamId: number;
   teamName: string;
   points: number; // Allocated points (e.g., 10, 8, 6)
   scoreMetric: number; // The raw metric used to rank (Net score, total stableford, etc.)
   rank: number;
+  playerBreakdown?: PlayerBreakdown[];
 };
 
 // Grouping Types

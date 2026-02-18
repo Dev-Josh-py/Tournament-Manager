@@ -1,13 +1,14 @@
-import { useTournamentLeaderboard, useRounds, useRoundLeaderboard, useMatchPairings, useScores, usePlayers } from "@/hooks/use-tournament";
+import { useState } from "react";
+import { useTournamentLeaderboard, useRounds, useRoundLeaderboard, useMatchPairings, useScores, usePlayers, useSetMatchWinner } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
 import { TeamBadge } from "@/components/TeamBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trophy, Medal, AlertCircle, Swords, TrendingDown, TrendingUp } from "lucide-react";
+import { Trophy, Medal, AlertCircle, Swords, TrendingDown, TrendingUp, ChevronDown } from "lucide-react";
 import { clsx } from "clsx";
-import type { Round, Score, MatchPairing } from "@shared/schema";
+import type { Round, Score, MatchPairing, PlayerBreakdown } from "@shared/schema";
 
 function RankIcon({ rank }: { rank: number }) {
   if (rank === 1) return <Trophy className="w-5 h-5 text-yellow-500 fill-yellow-500" />;
@@ -19,11 +20,12 @@ function RankIcon({ rank }: { rank: number }) {
 export default function Leaderboard() {
   const { data: overallData, isLoading: loadingOverall, error: overallError } = useTournamentLeaderboard();
   const { data: rounds, error: roundsError } = useRounds();
+  const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Header title="Tournament Standings" subtitle="Live Tournament Updates" />
-      
+
       <PageTransition>
         <main className="max-w-3xl mx-auto px-4 space-y-6">
 
@@ -62,10 +64,14 @@ export default function Leaderboard() {
                 </div>
               ) : (
                 overallData?.map((entry, idx) => (
-                  <Card key={entry.teamId} className={clsx(
-                    "border-none shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden relative",
-                    idx === 0 ? "bg-gradient-to-r from-yellow-50 to-white border-l-4 border-l-yellow-400" : "bg-white"
-                  )}>
+                  <Card
+                    key={entry.teamId}
+                    className={clsx(
+                      "border-none shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden relative cursor-pointer",
+                      idx === 0 ? "bg-gradient-to-r from-yellow-50 to-white border-l-4 border-l-yellow-400" : "bg-white"
+                    )}
+                    onClick={() => setExpandedTeamId(expandedTeamId === entry.teamId ? null : entry.teamId)}
+                  >
                     <CardContent className="p-3 flex items-center gap-3">
                       <div className="flex-shrink-0 w-6 flex justify-center">
                         <RankIcon rank={entry.rank} />
@@ -83,19 +89,28 @@ export default function Leaderboard() {
                         </div>
                       </div>
 
-                      <div className="text-right flex-shrink-0">
-                        <span className="text-xl font-bold font-display text-slate-900">
-                          {entry.totalPoints}
-                        </span>
-                        <span className="block text-[10px] uppercase tracking-wider text-slate-600 font-bold">
-                          pts
-                        </span>
+                      <div className="text-right flex-shrink-0 flex items-center gap-2">
+                        <div>
+                          <span className="text-xl font-bold font-display text-slate-900">
+                            {entry.totalPoints}
+                          </span>
+                          <span className="block text-[10px] uppercase tracking-wider text-slate-600 font-bold">
+                            pts
+                          </span>
+                        </div>
+                        <ChevronDown className={clsx(
+                          "w-4 h-4 text-slate-400 transition-transform duration-200",
+                          expandedTeamId === entry.teamId && "rotate-180"
+                        )} />
                       </div>
                     </CardContent>
-                    
-                    {/* Background decoration for 1st place */}
+
+                    {expandedTeamId === entry.teamId && rounds && (
+                      <TournamentTeamExpanded teamId={entry.teamId} rounds={rounds} />
+                    )}
+
                     {idx === 0 && (
-                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-yellow-400/10 rounded-full blur-2xl" />
+                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-yellow-400/10 rounded-full blur-2xl pointer-events-none" />
                     )}
                   </Card>
                 ))
@@ -129,8 +144,81 @@ export default function Leaderboard() {
   );
 }
 
+function PlayerBreakdownRow({ breakdown }: { breakdown: PlayerBreakdown }) {
+  const hasIndividualPoints = breakdown.pointsEarned > 0;
+
+  return (
+    <div className="flex items-center justify-between py-1">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="text-xs text-slate-700 font-medium truncate">
+          {breakdown.playerName}
+        </span>
+        {breakdown.description && (
+          <span className="text-[10px] text-slate-500 truncate">
+            ({breakdown.description})
+          </span>
+        )}
+      </div>
+      <div className="text-right flex-shrink-0 ml-2">
+        {hasIndividualPoints ? (
+          <span className="text-xs font-semibold text-primary">+{breakdown.pointsEarned} pts</span>
+        ) : (
+          <span className="text-xs text-slate-600">{breakdown.metric} {breakdown.metricLabel}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const FORMAT_LABELS: Record<string, string> = {
+  individual_net: "Individual Net",
+  individual_stableford: "Individual Stableford",
+  individual_match_play: "Match Play",
+  better_ball_stableford: "Better Ball",
+  combined_stableford: "Combined Stableford",
+  best_worst: "Best/Worst",
+  pick_9: "Pick 9",
+};
+
+function TournamentTeamExpanded({ teamId, rounds }: { teamId: number; rounds: Round[] }) {
+  return (
+    <div
+      className="px-3 pb-3 border-t border-slate-100 animate-in slide-in-from-top-2 fade-in duration-200"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {rounds.map((round) => (
+        <TournamentRoundRow key={round.id} round={round} teamId={teamId} />
+      ))}
+    </div>
+  );
+}
+
+function TournamentRoundRow({ round, teamId }: { round: Round; teamId: number }) {
+  const { data } = useRoundLeaderboard(round.id);
+
+  const teamEntry = data?.find((e) => e.teamId === teamId);
+  if (!teamEntry || teamEntry.points === 0) return null;
+
+  const breakdowns = teamEntry.playerBreakdown?.filter((b) => b.teamId === teamId) || [];
+
+  return (
+    <div className="py-2 border-b border-slate-50 last:border-b-0">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11px] font-semibold text-slate-600">
+          R{round.roundNumber}: {FORMAT_LABELS[round.formatType] || round.formatType} ({round.course?.name})
+        </span>
+        <span className="text-xs font-bold text-primary">+{teamEntry.points}</span>
+      </div>
+      {breakdowns.map((b) => (
+        <PlayerBreakdownRow key={b.playerId} breakdown={b} />
+      ))}
+    </div>
+  );
+}
+
 function RoundLeaderboard({ roundId, formatType }: { roundId: number; formatType: string }) {
   const { data, isLoading } = useRoundLeaderboard(roundId);
+  const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
 
   if (isLoading) return <div className="h-16 bg-white/50 rounded-xl animate-pulse" />;
 
@@ -154,32 +242,54 @@ function RoundLeaderboard({ roundId, formatType }: { roundId: number; formatType
             <Swords className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">
               <span className="font-semibold block mb-1">Match Play Results</span>
-              <span className="text-xs">Teams earn 6 pts for match win, 3 pts for draw, 1.5 pts for loss (based on Stableford comparison per hole)</span>
+              <span className="text-xs">8 pts for match win, 3 pts for loss — no draws (playoff if all square)</span>
             </div>
           </CardContent>
         </Card>
       )}
       <div className="grid gap-2">
         {data.map((entry) => (
-          <Card key={entry.teamId} className="border-0 shadow-sm bg-white/80">
-            <CardContent className="p-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="font-mono text-xs font-bold text-slate-700 w-4 text-center flex-shrink-0">
-                  {entry.rank}
-                </span>
-                <div className="min-w-0">
-                  <span className="font-semibold text-sm text-slate-900 block truncate">
-                    {entry.teamName}
+          <Card
+            key={entry.teamId}
+            className="border-0 shadow-sm bg-white/80 cursor-pointer"
+            onClick={() => setExpandedTeamId(expandedTeamId === entry.teamId ? null : entry.teamId)}
+          >
+            <CardContent className="p-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-mono text-xs font-bold text-slate-700 w-4 text-center flex-shrink-0">
+                    {entry.rank}
                   </span>
-                  <span className="text-[11px] text-slate-600">
-                    {isMatchPlay ? `${entry.scoreMetric} pts` : `Score: ${entry.scoreMetric}`}
-                  </span>
+                  <div className="min-w-0">
+                    <span className="font-semibold text-sm text-slate-900 block truncate">
+                      {entry.teamName}
+                    </span>
+                    <span className="text-[11px] text-slate-600">
+                      {isMatchPlay ? `${entry.scoreMetric} pts` : `Score: ${entry.scoreMetric}`}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0 flex items-center gap-1.5">
+                  <div>
+                    <span className="font-bold text-primary text-base">+{entry.points}</span>
+                    <span className="text-[9px] text-slate-600 block uppercase font-bold">pts</span>
+                  </div>
+                  <ChevronDown className={clsx(
+                    "w-3.5 h-3.5 text-slate-400 transition-transform duration-200",
+                    expandedTeamId === entry.teamId && "rotate-180"
+                  )} />
                 </div>
               </div>
-              <div className="text-right flex-shrink-0">
-                <span className="font-bold text-primary text-base">+{entry.points}</span>
-                <span className="text-[9px] text-slate-600 block uppercase font-bold">pts</span>
-              </div>
+              {expandedTeamId === entry.teamId && entry.playerBreakdown && entry.playerBreakdown.length > 0 && (
+                <div
+                  className="mt-2 pt-2 border-t border-slate-100 animate-in slide-in-from-top-2 fade-in duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {entry.playerBreakdown.map((b) => (
+                    <PlayerBreakdownRow key={b.playerId} breakdown={b} />
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -303,6 +413,7 @@ interface MatchCardProps {
 }
 
 function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps) {
+  const setMatchWinner = useSetMatchWinner();
   const player1Id = pairing.player1Id;
   const player2Id = pairing.player2Id;
 
@@ -375,7 +486,13 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
 
   const getMatchStatusDisplay = () => {
     if (finalHolesRemaining === 0) {
-      if (finalMatchStatus === 0) return "Match Tied - All Square";
+      if (finalMatchStatus === 0) {
+        if (pairing.winnerId) {
+          const winnerName = pairing.winnerId === player1Id ? player1Name : player2Name;
+          return `${winnerName} wins (Playoff)`;
+        }
+        return "All Square — Playoff Needed";
+      }
       if (finalMatchStatus > 0) return `${player1Name} wins ${finalMatchStatus} & ${finalHolesRemaining}`;
       return `${player2Name} wins ${Math.abs(finalMatchStatus)} & ${finalHolesRemaining}`;
     }
@@ -397,7 +514,13 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
 
   const getCurrentStatus = () => {
     if (finalHolesRemaining === 0) {
-      if (finalMatchStatus === 0) return "Match Tied";
+      if (finalMatchStatus === 0) {
+        if (pairing.winnerId) {
+          const winnerName = pairing.winnerId === player1Id ? player1Name : player2Name;
+          return `${winnerName} wins (Playoff)`;
+        }
+        return "All Square";
+      }
       if (finalMatchStatus > 0) return `${player1Name} wins`;
       return `${player2Name} wins`;
     }
@@ -470,6 +593,39 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
           <div className="text-center py-8 text-muted-foreground">
             <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p className="text-sm">No scores entered yet</p>
+          </div>
+        )}
+
+        {/* Playoff winner selection - shown when match is all square after 18 holes */}
+        {holesPlayed === 18 && finalMatchStatus === 0 && !pairing.winnerId && (
+          <div className="mt-3 pt-3 border-t border-slate-200">
+            <p className="text-xs font-semibold text-slate-700 mb-2 text-center">Select Playoff Winner</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setMatchWinner.mutate({ matchId: pairing.id, winnerId: player1Id })}
+                disabled={setMatchWinner.isPending}
+                className="px-3 py-2 text-xs font-semibold rounded-lg border-2 transition-colors hover:opacity-90 disabled:opacity-50"
+                style={{
+                  borderColor: player1Team?.color || '#999',
+                  backgroundColor: `${player1Team?.color || '#999'}15`,
+                  color: player1Team?.color || '#999',
+                }}
+              >
+                {player1Name}
+              </button>
+              <button
+                onClick={() => setMatchWinner.mutate({ matchId: pairing.id, winnerId: player2Id })}
+                disabled={setMatchWinner.isPending}
+                className="px-3 py-2 text-xs font-semibold rounded-lg border-2 transition-colors hover:opacity-90 disabled:opacity-50"
+                style={{
+                  borderColor: player2Team?.color || '#999',
+                  backgroundColor: `${player2Team?.color || '#999'}15`,
+                  color: player2Team?.color || '#999',
+                }}
+              >
+                {player2Name}
+              </button>
+            </div>
           </div>
         )}
       </CardContent>
