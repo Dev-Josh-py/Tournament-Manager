@@ -89,9 +89,9 @@ function DonutStat({
     <div className="flex flex-col items-center gap-1">
       <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
 
-      {/* Fixed-size PieChart so it never overflows on mobile */}
+      {/* Fixed 100×100 chart. margin=0 means cx=50,cy=50 == exact SVG+ring centre. */}
       <div style={{ width: 100, height: 100 }}>
-        <PieChart width={100} height={100}>
+        <PieChart width={100} height={100} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
           <Pie
             data={data}
             cx={50}
@@ -105,17 +105,16 @@ function DonutStat({
           >
             <Cell fill={color} />
             <Cell fill="#e2e8f0" />
+            {/* Hardcode x/y to the known ring centre (50,50).
+                dy="0.35em" replaces dominantBaseline for Safari/iOS compat. */}
             <Label
-              content={({ viewBox }) => {
-                const { cx = 50, cy = 50 } = (viewBox as { cx?: number; cy?: number }) ?? {};
-                return (
-                  <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central">
-                    <tspan style={{ fontSize: 16, fontWeight: 800, fill: color }}>
-                      {pct}%
-                    </tspan>
-                  </text>
-                );
-              }}
+              content={() => (
+                <text x={50} y={50} textAnchor="middle" dy="0.35em">
+                  <tspan style={{ fontSize: 16, fontWeight: 800, fill: color }}>
+                    {pct}%
+                  </tspan>
+                </text>
+              )}
             />
           </Pie>
         </PieChart>
