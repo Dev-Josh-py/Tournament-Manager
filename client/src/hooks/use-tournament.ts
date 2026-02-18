@@ -119,6 +119,9 @@ export function useAllRoundsScores(roundIds: number[]) {
       return roundIds.map(id => scoresMap.get(id) || []);
     },
     enabled: roundIds.length > 0 && roundIds.some(id => id > 0),
+    // Override global staleTime: Infinity so aggregated stats stay fresh
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 }
 
