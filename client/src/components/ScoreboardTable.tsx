@@ -203,7 +203,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                       );
                     })}
                     <td className="px-1.5 py-1.5 text-center text-xs font-bold text-blue-700 dark:text-blue-400">
-                      {firTracked > 0 ? `${firHits}/${firTracked}` : '-'}
+                      {firTracked > 0 ? `${Math.round((firHits / firTracked) * 100)}%` : '-'}
                     </td>
                   </tr>
                 );
@@ -228,7 +228,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                       );
                     })}
                     <td className="px-1.5 py-1.5 text-center text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                      {girTracked > 0 ? `${girHits}/${girTracked}` : '-'}
+                      {girTracked > 0 ? `${Math.round((girHits / girTracked) * 100)}%` : '-'}
                     </td>
                   </tr>
                 );

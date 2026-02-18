@@ -26,7 +26,6 @@ export default function Scoring() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
   const [strokes, setStrokes] = useState<number>(4);
   const [isPick9, setIsPick9] = useState<boolean>(false);
-  const [showStatsPanel, setShowStatsPanel] = useState<boolean>(false);
   const [gir, setGir] = useState<boolean | null>(null);
   const [fir, setFir] = useState<boolean | null>(null);
   const [putts, setPutts] = useState<number | null>(null);
@@ -846,90 +845,88 @@ export default function Scoring() {
                       </div>
                     )}
 
-                    {/* Stats Tracking Toggle */}
-                    <button
-                      onClick={() => setShowStatsPanel(!showStatsPanel)}
-                      className="text-xs font-medium text-slate-500 hover:text-slate-700 transition w-full text-center py-1"
-                    >
-                      {showStatsPanel ? 'Hide Stats' : 'Track FIR / GIR / Putts'}
-                    </button>
-
-                    {/* Stats Inputs */}
-                    {showStatsPanel && (
-                      <div className="w-full space-y-3">
-                        {/* FIR - hidden on par 3 */}
-                        {currentHoleData.par !== 3 && (
-                          <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/30 px-4 py-2 rounded-lg">
-                            <span className="text-sm font-medium text-blue-700 dark:text-blue-400">FIR</span>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => setFir(fir === true ? null : true)}
-                                className={clsx(
-                                  "px-3 py-1 rounded text-xs font-bold transition",
-                                  fir === true ? "bg-blue-600 text-white" : "bg-white border border-slate-200 text-slate-600"
-                                )}
-                              >
-                                Yes
-                              </button>
-                              <button
-                                onClick={() => setFir(fir === false ? null : false)}
-                                className={clsx(
-                                  "px-3 py-1 rounded text-xs font-bold transition",
-                                  fir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-600"
-                                )}
-                              >
-                                No
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* GIR */}
-                        <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2 rounded-lg">
-                          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">GIR</span>
-                          <div className="flex gap-2">
+                    {/* Stats Inputs — always visible */}
+                    <div className="w-full space-y-3">
+                      {/* FIR - hidden on par 3 */}
+                      {currentHoleData.par !== 3 && (
+                        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/30 px-4 py-3 rounded-lg">
+                          <span className="text-sm font-semibold text-blue-700 dark:text-blue-400">FIR</span>
+                          <div className="flex gap-2 flex-1 ml-4">
                             <button
-                              onClick={() => setGir(gir === true ? null : true)}
+                              onClick={() => setFir(fir === true ? null : true)}
                               className={clsx(
-                                "px-3 py-1 rounded text-xs font-bold transition",
-                                gir === true ? "bg-emerald-600 text-white" : "bg-white border border-slate-200 text-slate-600"
+                                "flex-1 min-h-[44px] rounded-lg text-lg font-bold transition",
+                                fir === true ? "bg-blue-600 text-white" : "bg-white border border-slate-200 text-slate-400"
                               )}
                             >
-                              Yes
+                              &#10003;
                             </button>
                             <button
-                              onClick={() => setGir(gir === false ? null : false)}
+                              onClick={() => setFir(fir === false ? null : false)}
                               className={clsx(
-                                "px-3 py-1 rounded text-xs font-bold transition",
-                                gir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-600"
+                                "flex-1 min-h-[44px] rounded-lg text-lg font-bold transition",
+                                fir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-400"
                               )}
                             >
-                              No
+                              &#10007;
                             </button>
                           </div>
                         </div>
+                      )}
 
-                        {/* Putts */}
-                        <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-lg">
-                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Putts</span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setPutts(putts !== null ? Math.max(0, putts - 1) : 0)}
-                              className="w-7 h-7 rounded border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
-                            >
-                              -
-                            </button>
-                            <span className="w-6 text-center font-bold text-sm">{putts ?? '-'}</span>
-                            <button
-                              onClick={() => setPutts(putts !== null ? Math.min(10, putts + 1) : 1)}
-                              className="w-7 h-7 rounded border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
-                            >
-                              +
-                            </button>
-                          </div>
+                      {/* GIR */}
+                      <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 rounded-lg">
+                        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">GIR</span>
+                        <div className="flex gap-2 flex-1 ml-4">
+                          <button
+                            onClick={() => setGir(gir === true ? null : true)}
+                            className={clsx(
+                              "flex-1 min-h-[44px] rounded-lg text-lg font-bold transition",
+                              gir === true ? "bg-emerald-600 text-white" : "bg-white border border-slate-200 text-slate-400"
+                            )}
+                          >
+                            &#10003;
+                          </button>
+                          <button
+                            onClick={() => setGir(gir === false ? null : false)}
+                            className={clsx(
+                              "flex-1 min-h-[44px] rounded-lg text-lg font-bold transition",
+                              gir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-400"
+                            )}
+                          >
+                            &#10007;
+                          </button>
                         </div>
                       </div>
-                    )}
+
+                      {/* Putts — quick-tap number row */}
+                      <div className="bg-slate-50 dark:bg-slate-800 px-4 py-3 rounded-lg">
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-2">Putts</span>
+                        <div className="flex gap-2">
+                          {[0, 1, 2, 3].map(n => (
+                            <button
+                              key={n}
+                              onClick={() => setPutts(putts === n ? null : n)}
+                              className={clsx(
+                                "flex-1 min-h-[44px] rounded-lg text-base font-bold transition",
+                                putts === n ? "bg-slate-700 text-white" : "bg-white border border-slate-200 text-slate-600"
+                              )}
+                            >
+                              {n}
+                            </button>
+                          ))}
+                          <button
+                            onClick={() => setPutts(putts !== null && putts >= 4 ? putts + 1 : 4)}
+                            className={clsx(
+                              "flex-1 min-h-[44px] rounded-lg text-base font-bold transition",
+                              putts !== null && putts >= 4 ? "bg-slate-700 text-white" : "bg-white border border-slate-200 text-slate-600"
+                            )}
+                          >
+                            {putts !== null && putts > 4 ? putts : '4+'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
                     {existingScore && (
                       <div className="absolute top-3 right-3 flex items-center gap-1 text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold uppercase tracking-wide">
@@ -1179,11 +1176,11 @@ export default function Scoring() {
                                   <span className="text-[10px] text-blue-600 font-medium">F</span>
                                   <button
                                     onClick={() => updateGroupStat('fir', playerFir === true ? null : true)}
-                                    className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400")}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400")}
                                   >&#10003;</button>
                                   <button
                                     onClick={() => updateGroupStat('fir', playerFir === false ? null : false)}
-                                    className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
                                   >&#10007;</button>
                                 </div>
                               )}
@@ -1191,24 +1188,26 @@ export default function Scoring() {
                                 <span className="text-[10px] text-emerald-600 font-medium">G</span>
                                 <button
                                   onClick={() => updateGroupStat('gir', playerGir === true ? null : true)}
-                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
                                 >&#10003;</button>
                                 <button
                                   onClick={() => updateGroupStat('gir', playerGir === false ? null : false)}
-                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
                                 >&#10007;</button>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-slate-500 font-medium">P</span>
+                              <div className="flex items-center gap-0.5">
+                                <span className="text-[10px] text-slate-500 font-medium mr-0.5">P</span>
+                                {[1, 2, 3].map(n => (
+                                  <button
+                                    key={n}
+                                    onClick={() => updateGroupStat('putts', playerPutts === n ? null : n)}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                  >{n}</button>
+                                ))}
                                 <button
-                                  onClick={() => updateGroupStat('putts', playerPutts !== null ? Math.max(0, playerPutts - 1) : 0)}
-                                  className="w-5 h-5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold"
-                                >-</button>
-                                <span className="text-[10px] font-bold w-4 text-center">{playerPutts ?? '-'}</span>
-                                <button
-                                  onClick={() => updateGroupStat('putts', playerPutts !== null ? Math.min(10, playerPutts + 1) : 1)}
-                                  className="w-5 h-5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold"
-                                >+</button>
+                                  onClick={() => updateGroupStat('putts', playerPutts !== null && playerPutts >= 4 ? playerPutts + 1 : 4)}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                >{playerPutts !== null && playerPutts > 4 ? playerPutts : '4+'}</button>
                               </div>
                             </div>
                           </div>
@@ -1476,11 +1475,11 @@ export default function Scoring() {
                                   <span className="text-[10px] text-blue-600 font-medium">F</span>
                                   <button
                                     onClick={() => updateMatchStat('fir', playerFir === true ? null : true)}
-                                    className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400")}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400")}
                                   >&#10003;</button>
                                   <button
                                     onClick={() => updateMatchStat('fir', playerFir === false ? null : false)}
-                                    className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
                                   >&#10007;</button>
                                 </div>
                               )}
@@ -1488,24 +1487,26 @@ export default function Scoring() {
                                 <span className="text-[10px] text-emerald-600 font-medium">G</span>
                                 <button
                                   onClick={() => updateMatchStat('gir', playerGir === true ? null : true)}
-                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
                                 >&#10003;</button>
                                 <button
                                   onClick={() => updateMatchStat('gir', playerGir === false ? null : false)}
-                                  className={clsx("w-5 h-5 rounded text-[10px] font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
                                 >&#10007;</button>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-slate-500 font-medium">P</span>
+                              <div className="flex items-center gap-0.5">
+                                <span className="text-[10px] text-slate-500 font-medium mr-0.5">P</span>
+                                {[1, 2, 3].map(n => (
+                                  <button
+                                    key={n}
+                                    onClick={() => updateMatchStat('putts', playerPutts === n ? null : n)}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                  >{n}</button>
+                                ))}
                                 <button
-                                  onClick={() => updateMatchStat('putts', playerPutts !== null ? Math.max(0, playerPutts - 1) : 0)}
-                                  className="w-5 h-5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold"
-                                >-</button>
-                                <span className="text-[10px] font-bold w-4 text-center">{playerPutts ?? '-'}</span>
-                                <button
-                                  onClick={() => updateMatchStat('putts', playerPutts !== null ? Math.min(10, playerPutts + 1) : 1)}
-                                  className="w-5 h-5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold"
-                                >+</button>
+                                  onClick={() => updateMatchStat('putts', playerPutts !== null && playerPutts >= 4 ? playerPutts + 1 : 4)}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                >{playerPutts !== null && playerPutts > 4 ? playerPutts : '4+'}</button>
                               </div>
                             </div>
                           </div>

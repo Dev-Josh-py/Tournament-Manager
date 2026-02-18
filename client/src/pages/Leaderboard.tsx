@@ -306,11 +306,13 @@ interface HoleCellProps {
   holeNumber: number;
   p1Points: number | null | undefined;
   p2Points: number | null | undefined;
+  p1Gross: number | null | undefined;
+  p2Gross: number | null | undefined;
   p1TeamColor?: string;
   p2TeamColor?: string;
 }
 
-function HoleCell({ holeNumber, p1Points, p2Points, p1TeamColor, p2TeamColor }: HoleCellProps) {
+function HoleCell({ holeNumber, p1Points, p2Points, p1Gross, p2Gross, p1TeamColor, p2TeamColor }: HoleCellProps) {
   let glowColor = "transparent";
   let glowOpacity = 0;
 
@@ -332,10 +334,10 @@ function HoleCell({ holeNumber, p1Points, p2Points, p1TeamColor, p2TeamColor }: 
       }}
     >
       <div className="text-[9px] sm:text-xs font-bold text-slate-600 leading-none">{holeNumber}</div>
-      {p1Points !== null && p1Points !== undefined && p2Points !== null && p2Points !== undefined && (
-        <div className="flex flex-col text-center text-[8px] sm:text-[9px] leading-tight mt-0.5">
-          <div className="font-semibold text-slate-700">{p1Points}</div>
-          <div className="font-semibold text-slate-700">{p2Points}</div>
+      {p1Gross !== null && p1Gross !== undefined && p2Gross !== null && p2Gross !== undefined && (
+        <div className="flex flex-col text-center text-[7px] sm:text-[9px] leading-tight mt-0.5">
+          <div className="font-semibold text-slate-700">{p1Gross}<span className="text-slate-400">({p1Points})</span></div>
+          <div className="font-semibold text-slate-700">{p2Gross}<span className="text-slate-400">({p2Points})</span></div>
         </div>
       )}
     </div>
@@ -345,11 +347,13 @@ function HoleCell({ holeNumber, p1Points, p2Points, p1TeamColor, p2TeamColor }: 
 interface HoleByHoleGridProps {
   player1Scores: Record<number, number | null | undefined>;
   player2Scores: Record<number, number | null | undefined>;
+  player1Gross: Record<number, number | null | undefined>;
+  player2Gross: Record<number, number | null | undefined>;
   p1TeamColor?: string;
   p2TeamColor?: string;
 }
 
-function HoleByHoleGrid({ player1Scores, player2Scores, p1TeamColor, p2TeamColor }: HoleByHoleGridProps) {
+function HoleByHoleGrid({ player1Scores, player2Scores, player1Gross, player2Gross, p1TeamColor, p2TeamColor }: HoleByHoleGridProps) {
   return (
     <div className="space-y-1.5">
       <div className="grid grid-cols-9 gap-0.5 sm:gap-1">
@@ -359,6 +363,8 @@ function HoleByHoleGrid({ player1Scores, player2Scores, p1TeamColor, p2TeamColor
             holeNumber={hole}
             p1Points={player1Scores[hole]}
             p2Points={player2Scores[hole]}
+            p1Gross={player1Gross[hole]}
+            p2Gross={player2Gross[hole]}
             p1TeamColor={p1TeamColor}
             p2TeamColor={p2TeamColor}
           />
@@ -371,6 +377,8 @@ function HoleByHoleGrid({ player1Scores, player2Scores, p1TeamColor, p2TeamColor
             holeNumber={hole}
             p1Points={player1Scores[hole]}
             p2Points={player2Scores[hole]}
+            p1Gross={player1Gross[hole]}
+            p2Gross={player2Gross[hole]}
             p1TeamColor={p1TeamColor}
             p2TeamColor={p2TeamColor}
           />
@@ -421,15 +429,19 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
   const player1Name = playerNames[player1Id] || `Player ${player1Id}`;
   const player2Name = playerNames[player2Id] || `Player ${player2Id}`;
 
-  // Build score maps by hole
+  // Build score maps by hole (stableford points and gross scores)
   const player1Scores: Record<number, number | null | undefined> = {};
   const player2Scores: Record<number, number | null | undefined> = {};
+  const player1Gross: Record<number, number | null | undefined> = {};
+  const player2Gross: Record<number, number | null | undefined> = {};
 
   scores.forEach(score => {
     if (score.playerId === player1Id) {
       player1Scores[score.holeNumber] = score.stablefordPoints;
+      player1Gross[score.holeNumber] = score.grossScore;
     } else if (score.playerId === player2Id) {
       player2Scores[score.holeNumber] = score.stablefordPoints;
+      player2Gross[score.holeNumber] = score.grossScore;
     }
   });
 
@@ -583,6 +595,8 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
             <HoleByHoleGrid
               player1Scores={player1Scores}
               player2Scores={player2Scores}
+              player1Gross={player1Gross}
+              player2Gross={player2Gross}
               p1TeamColor={player1Team?.color}
               p2TeamColor={player2Team?.color}
             />
