@@ -805,34 +805,25 @@ export default function Scoring() {
                 <Card className="border-none shadow-lg bg-white overflow-hidden relative">
                   <CardContent className="p-8 flex flex-col items-center justify-center gap-6">
 
-                    <div className="flex items-center gap-8">
-                      <Button
-                        variant="outline"
-                        className="h-16 w-16 rounded-full border-2 text-3xl font-light hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600"
-                        onClick={() => setStrokes(Math.max(1, strokes - 1))}
-                      >
-                        -
-                      </Button>
-
-                      <div className="text-center w-24 relative z-10">
-                        <span className={clsx(
-                          "text-7xl font-bold font-display block leading-none tracking-tighter transition-colors",
+                    <div className="flex flex-col items-center">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={strokes}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value);
+                          if (!isNaN(v)) setStrokes(Math.min(15, Math.max(1, v)));
+                        }}
+                        className={clsx(
+                          "text-7xl font-bold font-display text-center w-32 bg-transparent border-none outline-none leading-none tracking-tighter",
                           getScoreColor(strokes, currentHoleData.par)
-                        )}>
-                          {strokes}
-                        </span>
-                        <span className="text-xs uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest mt-2 block">
-                          Strokes
-                        </span>
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        className="h-16 w-16 rounded-full border-2 text-3xl font-light hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600"
-                        onClick={() => setStrokes(Math.min(15, strokes + 1))}
-                      >
-                        +
-                      </Button>
+                        )}
+                      />
+                      <span className="text-xs uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest mt-2 block">
+                        Strokes
+                      </span>
                     </div>
 
                     {roundDetails?.formatType === "pick_9" && (

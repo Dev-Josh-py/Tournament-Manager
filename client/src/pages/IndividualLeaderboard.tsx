@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScoreboardTable } from "@/components/ScoreboardTable";
-import { Users, ChevronDown, ChevronUp } from "lucide-react";
+import { RoundStatsCharts } from "@/components/RoundStatsCharts";
+import { Users, ChevronDown, ChevronUp, Target, ChevronRight } from "lucide-react";
+import type { Score } from "@shared/schema";
 import { clsx } from "clsx";
 import { useLocation } from "wouter";
 
@@ -44,6 +46,7 @@ export default function IndividualLeaderboard() {
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
   const [expandedRounds, setExpandedRounds] = useState<Set<number>>(new Set());
   const [expandedPlayersByRound, setExpandedPlayersByRound] = useState<Map<number, number | null>>(new Map());
+  const [expandedStatsPlayerId, setExpandedStatsPlayerId] = useState<number | null>(null);
   const [, navigate] = useLocation();
 
   // Fetch scores for all rounds in parallel
@@ -398,9 +401,10 @@ export default function IndividualLeaderboard() {
       <PageTransition>
         <main className="max-w-2xl mx-auto px-4">
           <Tabs defaultValue="tournament" className="w-full">
-            <TabsList className="w-full grid grid-cols-2 mb-6 bg-slate-200 dark:bg-slate-800 p-1">
+            <TabsList className="w-full grid grid-cols-3 mb-6 bg-slate-200 dark:bg-slate-800 p-1">
               <TabsTrigger value="tournament">Tournament</TabsTrigger>
               <TabsTrigger value="rounds">By Round</TabsTrigger>
+              <TabsTrigger value="stats">Stats</TabsTrigger>
             </TabsList>
 
             <TabsContent value="tournament" className="space-y-4">
@@ -569,6 +573,16 @@ export default function IndividualLeaderboard() {
                 </div>
               )}
             </TabsContent>
+
+            <TabsContent value="stats">
+              <PlayerStatsTab
+                rounds={rounds}
+                allScoresData={allScoresData}
+                players={players}
+                expandedPlayerId={expandedStatsPlayerId}
+                onTogglePlayer={(id) => setExpandedStatsPlayerId(prev => prev === id ? null : id)}
+              />
+            </TabsContent>
           </Tabs>
 
         </main>
@@ -576,5 +590,225 @@ export default function IndividualLeaderboard() {
 
       <BottomNav />
     </div>
+  );
+}
+
+// ============================================
+// Stats Tab
+// ============================================
+
+interface PlayerStatSummary {
+  playerId: number;
+  playerName: string;
+  teamName: string;
+  teamColor?: string;
+  firHits: number;
+  firTracked: number;
+  girHits: number;
+  girTracked: number;
+  totalPutts: number;
+  puttsTracked: number;
+}
+
+function PlayerStatsTab({
+  rounds,
+  allScoresData,
+  players,
+  expandedPlayerId,
+  onTogglePlayer,
+}: {
+  rounds?: any[];
+  allScoresData?: Score[][];
+  players?: any[];
+  expandedPlayerId: number | null;
+  onTogglePlayer: (id: number) => void;
+}) {
+  const stats = useMemo<PlayerStatSummary[]>(() => {
+    if (!players || !allScoresData || allScoresData.length === 0) return [];
+
+    const statsMap = new Map<number, PlayerStatSummary>();
+    players.forEach(player => {
+      statsMap.set(player.id, {
+        playerId: player.id,
+        playerName: player.name,
+        teamName: player.team?.name || "",
+        teamColor: player.team?.color,
+        firHits: 0, firTracked: 0,
+        girHits: 0, girTracked: 0,
+        totalPutts: 0, puttsTracked: 0,
+      });
+    });
+
+    allScoresData.forEach(roundScores => {
+      roundScores.forEach((score: Score) => {
+        if (score.playerId == null) return;
+        const entry = statsMap.get(score.playerId);
+        if (!entry) return;
+        if (score.fir !== null && score.fir !== undefined) {
+          entry.firTracked++;
+          if (score.fir) entry.firHits++;
+        }
+        if (score.gir !== null && score.gir !== undefined) {
+          entry.girTracked++;
+          if (score.gir) entry.girHits++;
+        }
+        if (score.putts !== null && score.putts !== undefined) {
+          entry.puttsTracked++;
+          entry.totalPutts += score.putts;
+        }
+      });
+    });
+
+    return Array.from(statsMap.values())
+      .filter(s => s.girTracked > 0 || s.firTracked > 0 || s.puttsTracked > 0);
+  }, [players, allScoresData]);
+
+  if (!rounds || rounds.length === 0) {
+    return (
+      <Card className="bg-slate-50 border-dashed shadow-none">
+        <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground text-sm">
+          No rounds available
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (stats.length === 0) {
+    return (
+      <Card className="bg-slate-50 border-dashed shadow-none">
+        <CardContent className="p-4 text-center text-muted-foreground text-sm">
+          <Target className="w-8 h-8 mx-auto mb-2 opacity-30" />
+          <p>No FIR/GIR/Putts data recorded yet.</p>
+          <p className="text-xs mt-1">Stats are tracked during score entry.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 gap-1 px-2 mb-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Player</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 text-center">FIR</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 text-center">GIR</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">Putts</span>
+      </div>
+      {stats.map(s => (
+        <div key={s.playerId} className="space-y-2">
+          <Card
+            className="border-0 shadow-sm bg-white cursor-pointer hover:shadow-md transition-all"
+            onClick={() => onTogglePlayer(s.playerId)}
+          >
+            <CardContent className="p-3">
+              <div className="grid grid-cols-4 gap-1 items-center">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.teamColor }} />
+                    <span className="text-xs font-semibold text-slate-900 truncate">{s.playerName}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 ml-3.5">{s.teamName}</span>
+                </div>
+                <div className="text-center">
+                  {s.firTracked > 0 ? (
+                    <>
+                      <div className="text-sm font-bold text-blue-600">
+                        {Math.round((s.firHits / s.firTracked) * 100)}%
+                      </div>
+                      <div className="text-[9px] text-slate-500">{s.firHits}/{s.firTracked}</div>
+                    </>
+                  ) : (
+                    <span className="text-xs text-slate-400">—</span>
+                  )}
+                </div>
+                <div className="text-center">
+                  {s.girTracked > 0 ? (
+                    <>
+                      <div className="text-sm font-bold text-emerald-600">
+                        {Math.round((s.girHits / s.girTracked) * 100)}%
+                      </div>
+                      <div className="text-[9px] text-slate-500">{s.girHits}/{s.girTracked}</div>
+                    </>
+                  ) : (
+                    <span className="text-xs text-slate-400">—</span>
+                  )}
+                </div>
+                <div className="text-center">
+                  {s.puttsTracked > 0 ? (
+                    <>
+                      <div className="text-sm font-bold text-slate-700">
+                        {(s.totalPutts / s.puttsTracked).toFixed(1)}
+                      </div>
+                      <div className="text-[9px] text-slate-500">{s.totalPutts} total</div>
+                    </>
+                  ) : (
+                    <span className="text-xs text-slate-400">—</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {expandedPlayerId === s.playerId && rounds && allScoresData && (
+            <div className="animate-in slide-in-from-top-2 fade-in duration-200">
+              <PlayerStatsCharts
+                playerId={s.playerId}
+                rounds={rounds}
+                allScoresData={allScoresData}
+              />
+            </div>
+          )}
+        </div>
+      ))}
+      <p className="text-[10px] text-slate-400 text-center px-2">
+        FIR = Fairways in Regulation · GIR = Greens in Regulation · Putts = avg per hole
+      </p>
+    </div>
+  );
+}
+
+function PlayerStatsCharts({
+  playerId,
+  rounds,
+  allScoresData,
+}: {
+  playerId: number;
+  rounds: any[];
+  allScoresData: Score[][];
+}) {
+  const combinedScores = useMemo(() => {
+    const result: Score[] = [];
+    rounds.forEach((round, i) => {
+      const offset = i * 100;
+      const roundPlayerScores = allScoresData[i]?.filter(s => s.playerId === playerId) || [];
+      roundPlayerScores.forEach(s => result.push({ ...s, holeNumber: s.holeNumber + offset }));
+    });
+    return result;
+  }, [playerId, rounds, allScoresData]);
+
+  const combinedHoles = useMemo(() => {
+    const result: any[] = [];
+    rounds.forEach((round, i) => {
+      const offset = i * 100;
+      (round.holes || []).forEach((h: any) => result.push({ ...h, number: h.number + offset }));
+    });
+    return result;
+  }, [rounds]);
+
+  if (combinedScores.length === 0) {
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4 text-center text-muted-foreground text-sm">
+          No scores recorded yet
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-l-4 border-l-primary shadow-md">
+      <CardContent className="p-4">
+        <RoundStatsCharts scores={combinedScores} holes={combinedHoles} />
+      </CardContent>
+    </Card>
   );
 }

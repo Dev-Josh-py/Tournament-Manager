@@ -40,7 +40,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
   // Golf-convention score badge
   const ScoreBadge = ({ score, par }: { score: number; par: number }) => {
     const diff = score - par;
-    const base = "inline-flex items-center justify-center w-6 h-6 text-xs font-bold leading-none";
+    const base = "inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 text-[10px] sm:text-xs font-bold leading-none";
 
     if (diff <= -2) {
       // Eagle: double circle — outline-offset creates a clean, consistent white gap
@@ -187,7 +187,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                   const par = hole?.par || 4;
 
                   return (
-                    <td key={h} className="px-1 sm:px-1.5 py-1 sm:py-1.5 text-center">
+                    <td key={h} className="px-0.5 sm:px-1 py-1 sm:py-1.5 text-center">
                       {grossScore
                         ? <ScoreBadge score={grossScore} par={par} />
                         : <span className="text-slate-400 text-xs">-</span>
@@ -246,7 +246,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                       const isPar3 = hole?.par === 3;
                       const fir = score?.fir;
                       return (
-                        <td key={h} className={clsx("px-1.5 py-1.5 text-center text-xs", isPar3 && "bg-slate-100 dark:bg-slate-800")}>
+                        <td key={h} className={clsx("px-0.5 sm:px-1.5 py-1 sm:py-1.5 text-center text-xs", isPar3 && "bg-slate-100 dark:bg-slate-800")}>
                           {isPar3 ? <span className="text-slate-300">-</span> :
                            fir === true ? <span className="text-blue-600 font-bold">&#10003;</span> :
                            fir === false ? <span className="text-red-400">&#10007;</span> :
@@ -272,7 +272,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                       const score = getScore(h);
                       const gir = score?.gir;
                       return (
-                        <td key={h} className="px-1.5 py-1.5 text-center text-xs">
+                        <td key={h} className="px-0.5 sm:px-1.5 py-1 sm:py-1.5 text-center text-xs">
                           {gir === true ? <span className="text-emerald-600 font-bold">&#10003;</span> :
                            gir === false ? <span className="text-red-400">&#10007;</span> :
                            <span className="text-slate-300">-</span>}

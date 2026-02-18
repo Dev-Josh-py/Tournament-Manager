@@ -11,10 +11,9 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Edit2, X, Check } from "lucide-react";
+import { Loader2, Edit2, X, Check, ChevronRight } from "lucide-react";
 import { clsx } from "clsx";
 
 export default function PlayerScorecard() {
@@ -177,26 +176,16 @@ export default function PlayerScorecard() {
                 </CardContent>
               </Card>
 
-              {/* Round Tabs */}
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="w-full grid grid-cols-2 mb-6 bg-slate-200 dark:bg-slate-800 p-1">
-                  <TabsTrigger value="all" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-foreground dark:data-[state=active]:text-white">
-                    All Rounds
-                  </TabsTrigger>
-                  <TabsTrigger value="single" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-foreground dark:data-[state=active]:text-white">
-                    Single Round
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* All Rounds Summary */}
-                <TabsContent value="all" className="space-y-3">
+              {/* Round List / Detail Navigation */}
+              {selectedRoundId === "" ? (
+                <div className="space-y-3">
                   {rounds && rounds.length > 0 ? (
                     rounds.map((round) => (
-                      <RoundSummaryCard
+                      <RoundListCard
                         key={round.id}
                         round={round}
                         playerId={selectedPlayer.id}
-                        playerHandicap={selectedPlayer.handicap}
+                        onClick={() => setSelectedRoundId(String(round.id))}
                       />
                     ))
                   ) : (
@@ -204,35 +193,23 @@ export default function PlayerScorecard() {
                       No rounds available
                     </div>
                   )}
-                </TabsContent>
-
-                {/* Single Round Detail */}
-                <TabsContent value="single" className="space-y-6">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground ml-1">Select Round</Label>
-                    <Select value={selectedRoundId} onValueChange={setSelectedRoundId}>
-                      <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700">
-                        <SelectValue placeholder="Choose a round..." />
-                      </SelectTrigger>
-                      <SelectContent className="z-[100] bg-white dark:bg-slate-800 dark:border-slate-700 backdrop-blur-sm">
-                        {rounds?.map((r) => (
-                          <SelectItem key={r.id} value={String(r.id)}>
-                            R{r.roundNumber}: {r.course.name} - {r.date}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {selectedRoundId && (
-                    <RoundDetailCard
-                      roundId={Number(selectedRoundId)}
-                      playerId={selectedPlayer.id}
-                      playerHandicap={selectedPlayer.handicap}
-                    />
-                  )}
-                </TabsContent>
-              </Tabs>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Button
+                    variant="ghost"
+                    className="pl-0 text-muted-foreground"
+                    onClick={() => setSelectedRoundId("")}
+                  >
+                    ← Back
+                  </Button>
+                  <RoundDetailCard
+                    roundId={Number(selectedRoundId)}
+                    playerId={selectedPlayer.id}
+                    playerHandicap={selectedPlayer.handicap}
+                  />
+                </div>
+              )}
 
             </div>
           ) : (
@@ -249,6 +226,55 @@ export default function PlayerScorecard() {
 
       <BottomNav />
     </div>
+  );
+}
+
+function RoundListCard({
+  round,
+  playerId,
+  onClick,
+}: {
+  round: any
+  playerId: number
+  onClick: () => void
+}) {
+  const { data: scores } = useScores(round.id);
+  const playerScores = scores?.filter((s: any) => s.playerId === playerId) || [];
+  const totalGross = playerScores.reduce((s: number, p: any) => s + (p.grossScore || 0), 0);
+  const totalPts = playerScores.reduce((s: number, p: any) => s + (p.stablefordPoints || 0), 0);
+
+  return (
+    <Card
+      className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.99]"
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-bold text-sm sm:text-base truncate">
+                R{round.roundNumber}: {round.course.name}
+              </h3>
+              <Badge variant="outline" className="dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 text-[10px] flex-shrink-0">
+                {round.formatType.replace(/_/g, ' ')}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">{round.date}</p>
+          </div>
+          <div className="text-right flex-shrink-0">
+            {playerScores.length > 0 ? (
+              <>
+                <div className="text-sm font-bold">{totalGross} gross</div>
+                <div className="text-xs text-muted-foreground">{totalPts} pts</div>
+              </>
+            ) : (
+              <div className="text-xs text-muted-foreground">No scores</div>
+            )}
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
