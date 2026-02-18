@@ -134,42 +134,6 @@ function DonutStat({
   );
 }
 
-// Mini bar chart for 9 holes of putts
-interface PuttEntry { hole: number; putts: number }
-function PuttsNine({ data, label }: { data: PuttEntry[]; label: string }) {
-  if (data.length === 0) return null;
-  return (
-    <div>
-      <p className="text-[9px] font-bold uppercase text-slate-400 mb-1 tracking-wider">{label}</p>
-      <div style={{ height: 68 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 14, right: 2, left: 2, bottom: 0 }} barCategoryGap="20%">
-            <XAxis
-              dataKey="hole"
-              tick={{ fontSize: 8, fill: "#94a3b8" }}
-              axisLine={false}
-              tickLine={false}
-              interval={0}
-            />
-            <Bar dataKey="putts" radius={[3, 3, 0, 0]} maxBarSize={22} minPointSize={4}>
-              <LabelList
-                dataKey="putts"
-                position="top"
-                style={{ fontSize: 9, fontWeight: 700, fill: "#475569" }}
-              />
-              {data.map((d, idx) => (
-                <Cell
-                  key={idx}
-                  fill={d.putts >= 3 ? "#ef4444" : d.putts === 1 ? "#22c55e" : "#64748b"}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
 
 export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
   if (scores.length === 0 || holes.length === 0) return null;
@@ -227,19 +191,22 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
   const girHits    = scores.filter(s => s.gir === true).length;
 
   // ── Putts ─────────────────────────────────────────────────────────
-  const puttsData = scores
-    .filter(s => s.putts !== null && s.putts !== undefined)
-    .sort((a, b) => a.holeNumber - b.holeNumber)
-    .map(s => ({ hole: s.holeNumber, putts: s.putts as number }));
+  const puttsScores = scores.filter(s => s.putts !== null && s.putts !== undefined);
+  const totalPutts  = puttsScores.reduce((sum, s) => sum + (s.putts as number), 0);
+  const avgPutts    = puttsScores.length > 0 ? totalPutts / puttsScores.length : null;
 
-  const totalPutts = puttsData.reduce((sum, d) => sum + d.putts, 0);
-  const avgPutts   = puttsData.length > 0 ? (totalPutts / puttsData.length).toFixed(1) : null;
-
-  const front9Putts = puttsData.filter(d => d.hole <= 9);
-  const back9Putts  = puttsData.filter(d => d.hole > 9);
+  const avgPuttsByPar = ([3, 4, 5] as const).map(par => {
+    const parPutts = puttsScores.filter(s => {
+      const h = holes.find(h => h.number === s.holeNumber);
+      return h?.par === par;
+    });
+    if (parPutts.length === 0) return null;
+    const avg = parPutts.reduce((sum, s) => sum + (s.putts as number), 0) / parPutts.length;
+    return { par, avg, count: parPutts.length };
+  }).filter((x): x is { par: 3 | 4 | 5; avg: number; count: number } => x !== null);
 
   const hasFirGir = firTracked > 0 || girTracked > 0;
-  const hasPutts  = puttsData.length > 0;
+  const hasPutts  = puttsScores.length > 0;
 
   return (
     <div className="space-y-3 mt-4">
@@ -389,42 +356,53 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
         </Card>
       )}
 
-      {/* ── Putts per Hole ──────────────────────────────────────── */}
-      {hasPutts && (
+      {/* ── Putting ─────────────────────────────────────────────── */}
+      {hasPutts && avgPutts !== null && (
         <Card className="border-0 shadow-sm bg-white">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Putts per Hole
+                Putting
               </p>
-              {avgPutts && (
-                <span className="text-sm font-bold text-slate-700">
-                  {avgPutts}
-                  <span className="text-[10px] font-normal text-slate-500 ml-0.5">avg/hole</span>
-                </span>
-              )}
+              <div className="text-right">
+                <span className="text-2xl font-bold text-slate-800">{avgPutts.toFixed(1)}</span>
+                <span className="text-[10px] text-slate-500 ml-1">avg putts/hole</span>
+              </div>
             </div>
 
-            {/* Split into front 9 / back 9 so bars aren't cramped on mobile */}
-            <div className="space-y-3">
-              <PuttsNine data={front9Putts} label="Front 9" />
-              <PuttsNine data={back9Putts}  label="Back 9" />
-            </div>
-
-            <div className="flex items-center gap-4 mt-3 justify-center">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="text-[9px] text-slate-500">1 putt</span>
+            {/* Avg putts per par type */}
+            {avgPuttsByPar.length > 0 && (
+              <div className="space-y-3">
+                {(() => {
+                  const maxAvg = Math.max(...avgPuttsByPar.map(d => d.avg), 1);
+                  return avgPuttsByPar.map(d => {
+                    const barPct   = Math.round((d.avg / maxAvg) * 100);
+                    // Color: <1.5=green, 1.5-2=slate, 2-2.5=amber, >2.5=red
+                    const barColor =
+                      d.avg < 1.5 ? "#22c55e" :
+                      d.avg < 2.0 ? "#64748b" :
+                      d.avg < 2.5 ? "#f59e0b" :
+                                    "#ef4444";
+                    return (
+                      <div key={d.par} className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-slate-600 w-11 flex-shrink-0">
+                          Par {d.par}
+                        </span>
+                        <div className="flex-1 bg-slate-100 rounded-full h-3.5 overflow-hidden">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${Math.max(barPct, 6)}%`, backgroundColor: barColor }}
+                          />
+                        </div>
+                        <span className="text-xs font-bold w-10 text-right flex-shrink-0" style={{ color: barColor }}>
+                          {d.avg.toFixed(1)}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-                <span className="text-[9px] text-slate-500">2 putts</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                <span className="text-[9px] text-slate-500">3+ putts</span>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       )}

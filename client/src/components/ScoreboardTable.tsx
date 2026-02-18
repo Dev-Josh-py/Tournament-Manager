@@ -37,14 +37,55 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
   // Helper to get score for a hole
   const getScore = (holeNumber: number) => sortedScores.find(s => s.holeNumber === holeNumber);
 
-  // Color for score based on performance vs par
-  const getScoreColor = (score: number, par: number) => {
+  // Golf-convention score badge
+  const ScoreBadge = ({ score, par }: { score: number; par: number }) => {
     const diff = score - par;
-    if (diff <= -2) return "bg-amber-100 text-amber-700 font-bold";  // Eagle (gold)
-    if (diff === -1) return "bg-red-100 text-red-700 font-bold";     // Birdie (red)
-    if (diff === 0)  return "bg-gray-100 text-gray-900 font-bold";   // Par (default)
-    if (diff === 1)  return "bg-blue-100 text-blue-600 font-bold";   // Bogey (light blue)
-    return "bg-blue-900 text-white font-bold";                       // Double+ (dark blue)
+    const base = "inline-flex items-center justify-center w-6 h-6 text-xs font-bold leading-none";
+
+    if (diff <= -2) {
+      // Eagle: double circle (amber)
+      return (
+        <span
+          className={`${base} rounded-full border-2 border-amber-600 bg-amber-100 text-amber-700`}
+          style={{ boxShadow: "0 0 0 2px #d97706" }}
+        >
+          {score}
+        </span>
+      );
+    }
+    if (diff === -1) {
+      // Birdie: single circle with red border
+      return (
+        <span className={`${base} rounded-full border-2 border-red-600 bg-red-50 text-red-700`}>
+          {score}
+        </span>
+      );
+    }
+    if (diff === 0) {
+      // Par: shaded, no border
+      return (
+        <span className={`${base} rounded bg-gray-100 text-gray-900`}>
+          {score}
+        </span>
+      );
+    }
+    if (diff === 1) {
+      // Bogey: square with blue border
+      return (
+        <span className={`${base} border-2 border-blue-500 bg-blue-50 text-blue-600`}>
+          {score}
+        </span>
+      );
+    }
+    // Double+: double square (dark blue)
+    return (
+      <span
+        className={`${base} border-2 border-blue-900 bg-blue-900 text-white`}
+        style={{ boxShadow: "0 0 0 2px #1e40af" }}
+      >
+        {score}
+      </span>
+    );
   };
 
   // Calculate sums for a set of holes
@@ -132,14 +173,11 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                   const par = hole?.par || 4;
 
                   return (
-                    <td
-                      key={h}
-                      className={clsx(
-                        "px-0.5 sm:px-1.5 py-1 sm:py-2 text-center rounded",
-                        grossScore && getScoreColor(grossScore, par)
-                      )}
-                    >
-                      {grossScore || '-'}
+                    <td key={h} className="px-0.5 sm:px-1 py-1 sm:py-1.5 text-center">
+                      {grossScore
+                        ? <ScoreBadge score={grossScore} par={par} />
+                        : <span className="text-slate-400 text-xs">-</span>
+                      }
                     </td>
                   );
                 })}
