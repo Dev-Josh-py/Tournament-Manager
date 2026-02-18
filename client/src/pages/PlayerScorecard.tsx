@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
 import { ScoreboardTable } from "@/components/ScoreboardTable";
+import { RoundStatsCharts } from "@/components/RoundStatsCharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -295,6 +296,7 @@ function RoundSummaryCard({
           courseHandicap={playerHandicapData?.courseHandicap}
           showStats={true}
         />
+        <RoundStatsCharts scores={playerScores} holes={round.holes || []} />
       </CardContent>
     </Card>
   );
@@ -474,12 +476,16 @@ function RoundDetailCard({
               })}
             </div>
           ) : (
-            <ScoreboardTable
-              playerScores={playerScores}
-              holes={round.holes || []}
-              roundFormat={round.formatType}
-              courseHandicap={playerHandicapData?.courseHandicap}
-            />
+            <>
+              <ScoreboardTable
+                playerScores={playerScores}
+                holes={round.holes || []}
+                roundFormat={round.formatType}
+                courseHandicap={playerHandicapData?.courseHandicap}
+                showStats={true}
+              />
+              <RoundStatsCharts scores={playerScores} holes={round.holes || []} />
+            </>
           )}
         </CardContent>
       </Card>
