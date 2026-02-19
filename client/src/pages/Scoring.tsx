@@ -817,7 +817,7 @@ export default function Scoring() {
                           if (!isNaN(v)) setStrokes(Math.min(15, Math.max(1, v)));
                         }}
                         className={clsx(
-                          "text-7xl font-bold font-display text-center w-32 bg-transparent border-none outline-none leading-none tracking-tighter",
+                          "text-7xl font-bold font-display text-center w-32 bg-transparent border-none outline-none leading-none tracking-tighter selection:bg-transparent selection:text-inherit",
                           getScoreColor(strokes, currentHoleData.par)
                         )}
                       />
@@ -1129,7 +1129,7 @@ export default function Scoring() {
                                     }));
                                   }}
                                   className={clsx(
-                                    "w-12 h-10 text-center text-2xl font-bold bg-transparent outline-none",
+                                    "w-12 h-10 text-center text-2xl font-bold bg-transparent outline-none selection:bg-transparent selection:text-inherit",
                                     scoreColor
                                   )}
                                 />
@@ -1404,7 +1404,7 @@ export default function Scoring() {
                                     }));
                                   }}
                                   className={clsx(
-                                    "w-14 h-12 text-center text-3xl font-bold bg-transparent outline-none",
+                                    "w-14 h-12 text-center text-3xl font-bold bg-transparent outline-none selection:bg-transparent selection:text-inherit",
                                     scoreColor
                                   )}
                                 />
