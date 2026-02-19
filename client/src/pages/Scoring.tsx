@@ -811,13 +811,20 @@ export default function Scoring() {
                         inputMode="numeric"
                         pattern="[0-9]*"
                         value={strokes}
-                        onFocus={(e) => e.target.select()}
+                        readOnly
+                        onClick={(e) => {
+                          e.currentTarget.readOnly = false;
+                          e.currentTarget.focus();
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.readOnly = true;
+                        }}
                         onChange={(e) => {
                           const v = parseInt(e.target.value);
                           if (!isNaN(v)) setStrokes(Math.min(15, Math.max(1, v)));
                         }}
                         className={clsx(
-                          "text-7xl font-bold font-display text-center w-32 bg-transparent border-none outline-none leading-none tracking-tighter selection:bg-transparent selection:text-inherit",
+                          "text-7xl font-bold font-display text-center w-32 bg-transparent border-none outline-none leading-none tracking-tighter",
                           getScoreColor(strokes, currentHoleData.par)
                         )}
                       />
@@ -1112,7 +1119,14 @@ export default function Scoring() {
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   value={currentScore || ""}
-                                  onFocus={(e) => e.target.select()}
+                                  readOnly
+                                  onClick={(e) => {
+                                    e.currentTarget.readOnly = false;
+                                    e.currentTarget.focus();
+                                  }}
+                                  onBlur={(e) => {
+                                    e.currentTarget.readOnly = true;
+                                  }}
                                   onChange={(e) => {
                                     const val = parseInt(e.target.value.slice(-1));
                                     if (isNaN(val) || val < 1 || val > 9) return;
@@ -1129,7 +1143,7 @@ export default function Scoring() {
                                     }));
                                   }}
                                   className={clsx(
-                                    "w-12 h-10 text-center text-2xl font-bold bg-transparent outline-none selection:bg-transparent selection:text-inherit",
+                                    "w-12 h-10 text-center text-2xl font-bold bg-transparent outline-none",
                                     scoreColor
                                   )}
                                 />
@@ -1385,7 +1399,14 @@ export default function Scoring() {
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   value={currentScore || ""}
-                                  onFocus={(e) => e.target.select()}
+                                  readOnly
+                                  onClick={(e) => {
+                                    e.currentTarget.readOnly = false;
+                                    e.currentTarget.focus();
+                                  }}
+                                  onBlur={(e) => {
+                                    e.currentTarget.readOnly = true;
+                                  }}
                                   onChange={(e) => {
                                     const val = parseInt(e.target.value.slice(-1));
                                     if (isNaN(val) || val < 1 || val > 9) return;
@@ -1404,7 +1425,7 @@ export default function Scoring() {
                                     }));
                                   }}
                                   className={clsx(
-                                    "w-14 h-12 text-center text-3xl font-bold bg-transparent outline-none selection:bg-transparent selection:text-inherit",
+                                    "w-14 h-12 text-center text-3xl font-bold bg-transparent outline-none",
                                     scoreColor
                                   )}
                                 />
