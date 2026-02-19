@@ -1188,7 +1188,7 @@ export default function Scoring() {
                               </div>
                               <div className="flex items-center gap-0.5">
                                 <span className="text-[10px] text-slate-500 font-medium mr-0.5">P</span>
-                                {[1, 2, 3].map(n => (
+                                {[0, 1, 2, 3].map(n => (
                                   <button
                                     key={n}
                                     onClick={() => updateGroupStat('putts', playerPutts === n ? null : n)}
@@ -1487,7 +1487,7 @@ export default function Scoring() {
                               </div>
                               <div className="flex items-center gap-0.5">
                                 <span className="text-[10px] text-slate-500 font-medium mr-0.5">P</span>
-                                {[1, 2, 3].map(n => (
+                                {[0, 1, 2, 3].map(n => (
                                   <button
                                     key={n}
                                     onClick={() => updateMatchStat('putts', playerPutts === n ? null : n)}
