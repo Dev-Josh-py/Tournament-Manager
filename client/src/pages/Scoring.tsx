@@ -1106,62 +1106,38 @@ export default function Scoring() {
                               </div>
 
                               {/* Score Controls */}
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-sm font-light rounded border-slate-300"
-                                  onClick={() => {
-                                    const newStrokes = Math.max(1, (playerUnsaved?.strokes || currentScore || 4) - 1);
+                              <div className="flex-shrink-0 bg-slate-50 border border-slate-200 rounded-lg">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  value={currentScore || ""}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value.slice(-1));
+                                    if (isNaN(val) || val < 1 || val > 9) return;
                                     setGroupScores(prev => ({
                                       ...prev,
                                       [selectedGroupNumber]: {
                                         ...prev[selectedGroupNumber],
                                         [player.id]: {
                                           ...prev[selectedGroupNumber]?.[player.id],
-                                          strokes: newStrokes,
+                                          strokes: val,
                                           isPick9: playerUnsaved?.isPick9 || false
                                         }
                                       }
                                     }));
                                   }}
-                                >
-                                  −
-                                </Button>
-
-                                <div className={clsx(
-                                  "w-10 text-center font-bold text-sm",
-                                  scoreColor
-                                )}>
-                                  {currentScore || "-"}
-                                </div>
-
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-sm font-light rounded border-slate-300"
-                                  onClick={() => {
-                                    const newStrokes = Math.min(15, (playerUnsaved?.strokes || currentScore || 4) + 1);
-                                    setGroupScores(prev => ({
-                                      ...prev,
-                                      [selectedGroupNumber]: {
-                                        ...prev[selectedGroupNumber],
-                                        [player.id]: {
-                                          ...prev[selectedGroupNumber]?.[player.id],
-                                          strokes: newStrokes,
-                                          isPick9: playerUnsaved?.isPick9 || false
-                                        }
-                                      }
-                                    }));
-                                  }}
-                                >
-                                  +
-                                </Button>
+                                  className={clsx(
+                                    "w-12 h-10 text-center text-2xl font-bold bg-transparent outline-none",
+                                    scoreColor
+                                  )}
+                                />
                               </div>
                             </div>
 
                             {/* Compact Stats Row */}
-                            <div className="flex items-center gap-2 mt-2 ml-5">
+                            <div className="flex flex-wrap items-center gap-2 mt-2 ml-5">
                               {currentHoleData.par !== 3 && (
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px] text-blue-600 font-medium">F</span>
@@ -1192,12 +1168,12 @@ export default function Scoring() {
                                   <button
                                     key={n}
                                     onClick={() => updateGroupStat('putts', playerPutts === n ? null : n)}
-                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                    className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
                                   >{n}</button>
                                 ))}
                                 <button
                                   onClick={() => updateGroupStat('putts', playerPutts !== null && playerPutts >= 4 ? playerPutts + 1 : 4)}
-                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                  className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
                                 >{playerPutts !== null && playerPutts > 4 ? playerPutts : '4+'}</button>
                               </div>
                             </div>
@@ -1402,65 +1378,41 @@ export default function Scoring() {
                             </div>
 
                             {/* Score Controls */}
-                            <div className="flex items-center justify-center gap-4">
-                              <Button
-                                variant="outline"
-                                className="h-12 w-12 rounded-full border-2 text-2xl font-light"
-                                onClick={() => {
-                                  const base = playerUnsaved?.strokes ?? (currentScore || 4);
-                                  const newStrokes = Math.max(1, base - 1);
-                                  setMatchScores(prev => ({
-                                    ...prev,
-                                    [selectedMatchNumber]: {
-                                      ...prev[selectedMatchNumber],
-                                      [player.id]: {
-                                        ...(prev[selectedMatchNumber]?.[player.id] || {}),
-                                        [currentHole]: {
-                                          ...prev[selectedMatchNumber]?.[player.id]?.[currentHole],
-                                          strokes: newStrokes,
+                            <div className="flex items-center justify-center">
+                              <div className="bg-slate-50 border border-slate-200 rounded-lg">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  value={currentScore || ""}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value.slice(-1));
+                                    if (isNaN(val) || val < 1 || val > 9) return;
+                                    setMatchScores(prev => ({
+                                      ...prev,
+                                      [selectedMatchNumber]: {
+                                        ...prev[selectedMatchNumber],
+                                        [player.id]: {
+                                          ...(prev[selectedMatchNumber]?.[player.id] || {}),
+                                          [currentHole]: {
+                                            ...prev[selectedMatchNumber]?.[player.id]?.[currentHole],
+                                            strokes: val,
+                                          }
                                         }
                                       }
-                                    }
-                                  }));
-                                }}
-                              >
-                                −
-                              </Button>
-
-                              <div className={clsx(
-                                "w-16 text-center font-bold text-2xl",
-                                scoreColor
-                              )}>
-                                {currentScore || "-"}
+                                    }));
+                                  }}
+                                  className={clsx(
+                                    "w-14 h-12 text-center text-3xl font-bold bg-transparent outline-none",
+                                    scoreColor
+                                  )}
+                                />
                               </div>
-
-                              <Button
-                                variant="outline"
-                                className="h-12 w-12 rounded-full border-2 text-2xl font-light"
-                                onClick={() => {
-                                  const base = playerUnsaved?.strokes ?? (currentScore || 4);
-                                  const newStrokes = Math.min(15, base + 1);
-                                  setMatchScores(prev => ({
-                                    ...prev,
-                                    [selectedMatchNumber]: {
-                                      ...prev[selectedMatchNumber],
-                                      [player.id]: {
-                                        ...(prev[selectedMatchNumber]?.[player.id] || {}),
-                                        [currentHole]: {
-                                          ...prev[selectedMatchNumber]?.[player.id]?.[currentHole],
-                                          strokes: newStrokes,
-                                        }
-                                      }
-                                    }
-                                  }));
-                                }}
-                              >
-                                +
-                              </Button>
                             </div>
 
                             {/* Compact Stats */}
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex flex-wrap items-center justify-center gap-2">
                               {currentHoleData.par !== 3 && (
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px] text-blue-600 font-medium">F</span>
@@ -1491,12 +1443,12 @@ export default function Scoring() {
                                   <button
                                     key={n}
                                     onClick={() => updateMatchStat('putts', playerPutts === n ? null : n)}
-                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                    className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
                                   >{n}</button>
                                 ))}
                                 <button
                                   onClick={() => updateMatchStat('putts', playerPutts !== null && playerPutts >= 4 ? playerPutts + 1 : 4)}
-                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                  className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
                                 >{playerPutts !== null && playerPutts > 4 ? playerPutts : '4+'}</button>
                               </div>
                             </div>
