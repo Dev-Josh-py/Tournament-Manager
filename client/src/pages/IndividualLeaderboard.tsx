@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScoreboardTable } from "@/components/ScoreboardTable";
 import { RoundStatsCharts } from "@/components/RoundStatsCharts";
+import { StrokesGainedSection } from "@/components/StrokesGainedSection";
 import { Users, ChevronDown, ChevronUp, Target, ChevronRight } from "lucide-react";
 import type { Score } from "@shared/schema";
 import { clsx } from "clsx";
@@ -762,6 +763,12 @@ function PlayerStatsTab({
       <p className="text-[10px] text-slate-400 text-center px-2">
         FIR = Fairways in Regulation · GIR = Greens in Regulation · Putts = avg per hole
       </p>
+
+      <StrokesGainedSection
+        rounds={rounds}
+        allScoresData={allScoresData}
+        players={players}
+      />
     </div>
   );
 }
