@@ -294,6 +294,17 @@ export default function IndividualLeaderboard() {
                   <div>
                     <h3 className="font-bold text-lg">
                       R{round.roundNumber}: {round.course.name}
+                      {roundScores && (() => {
+                        const ps = roundScores.filter(s => s.playerId === player.playerId);
+                        if (ps.length === 0) return null;
+                        const gross = ps.reduce((sum, s) => sum + (s.grossScore || 0), 0);
+                        const pts = ps.reduce((sum, s) => sum + (s.stablefordPoints || 0), 0);
+                        return (
+                          <span className="text-sm font-normal text-muted-foreground ml-2">
+                            — {gross} ({pts} pts)
+                          </span>
+                        );
+                      })()}
                     </h3>
                   </div>
                 </div>
@@ -525,6 +536,17 @@ export default function IndividualLeaderboard() {
                           <div>
                             <h3 className="font-bold text-lg">
                               R{displayRoundInfo.round.roundNumber}: {displayRoundInfo.round.course.name}
+                              {expandedRoundScores && (() => {
+                                const ps = expandedRoundScores.filter(s => s.playerId === player.playerId);
+                                if (ps.length === 0) return null;
+                                const gross = ps.reduce((sum, s) => sum + (s.grossScore || 0), 0);
+                                const pts = ps.reduce((sum, s) => sum + (s.stablefordPoints || 0), 0);
+                                return (
+                                  <span className="text-sm font-normal text-muted-foreground ml-2">
+                                    — {gross} ({pts} pts)
+                                  </span>
+                                );
+                              })()}
                             </h3>
                             {displayRoundInfo.isIncomplete && (
                               <Badge variant="secondary" className="mt-1">In Progress</Badge>
@@ -649,7 +671,10 @@ function SGBarLabel({ x, y, width, height, index, data, isDark }: any) {
   const color = isPositive
     ? (isDark ? "#4ade80" : "#16a34a")
     : (isDark ? "#f87171" : "#ef4444");
-  const labelY = (y ?? 0) - 5;
+  // Positive bars: label floats above the bar. Negative bars: label floats below the bar.
+  const labelY = isPositive
+    ? (y ?? 0) - 5
+    : (y ?? 0) + Math.abs(height ?? 0) + 12;
   return (
     <text
       x={(x ?? 0) + (width ?? 0) / 2}
