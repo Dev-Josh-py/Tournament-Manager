@@ -23,6 +23,7 @@ import {
 import type { Score } from "@shared/schema";
 import { clsx } from "clsx";
 import { useLocation } from "wouter";
+import { useTheme } from "@/lib/theme";
 
 interface PlayerScore {
   playerId: number;
@@ -171,10 +172,10 @@ export default function IndividualLeaderboard() {
 
   const getToParColor = (toPar: number) => {
     if (toPar <= -8) return "text-amber-500"; // Eagle+
-    if (toPar <= -4) return "text-red-500"; // Birdie range
-    if (toPar === 0) return "text-slate-900"; // Even
-    if (toPar <= 4) return "text-blue-600"; // Bogey range
-    return "text-slate-500"; // Double+
+    if (toPar <= -4) return "text-red-500 dark:text-red-400"; // Birdie range
+    if (toPar === 0) return "text-slate-900 dark:text-slate-100"; // Even
+    if (toPar <= 4) return "text-blue-600 dark:text-blue-400"; // Bogey range
+    return "text-slate-500 dark:text-slate-400"; // Double+
   };
 
   const getRankIcon = (rank: number) => {
@@ -370,7 +371,7 @@ export default function IndividualLeaderboard() {
             ))}
           </div>
         ) : (
-          <Card className="bg-slate-50 border-dashed shadow-none">
+          <Card className="bg-slate-50 dark:bg-slate-900 border-dashed shadow-none">
             <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground text-sm">
               No scores posted yet
             </CardContent>
@@ -625,24 +626,28 @@ function formatSG(value: number): string {
 }
 
 function sgColor(value: number | null): string {
-  if (value === null) return "text-slate-400";
-  if (value > 0) return "text-emerald-600";
-  if (value < 0) return "text-red-500";
-  return "text-slate-600";
+  if (value === null) return "text-slate-400 dark:text-slate-500";
+  if (value > 0) return "text-emerald-600 dark:text-emerald-400";
+  if (value < 0) return "text-red-500 dark:text-red-400";
+  return "text-slate-600 dark:text-slate-400";
 }
 
-function sgColorHex(value: number): string {
-  return value >= 0 ? "#22c55e" : "#ef4444";
+function sgColorHex(value: number, isDark: boolean): string {
+  return value >= 0 ? (isDark ? "#4ade80" : "#22c55e") : (isDark ? "#f87171" : "#ef4444");
 }
 
-function SGBarLabel({ x, y, width, index, data }: any) {
+function SGBarLabel({ x, y, width, height, index, data, isDark }: any) {
   const entry = data?.[index];
   if (!entry) return null;
-  const color = entry.sg >= 0 ? "#16a34a" : "#ef4444";
+  const isPositive = entry.sg >= 0;
+  const color = isPositive
+    ? (isDark ? "#4ade80" : "#16a34a")
+    : (isDark ? "#f87171" : "#ef4444");
+  const labelY = isPositive ? (y ?? 0) - 5 : (y ?? 0) + (height ?? 0) + 12;
   return (
     <text
       x={(x ?? 0) + (width ?? 0) / 2}
-      y={(y ?? 0) - 5}
+      y={labelY}
       textAnchor="middle"
       style={{ fontSize: 10, fontWeight: 800, fill: color }}
     >
@@ -678,6 +683,8 @@ function PlayerStatsTab({
   expandedPlayerId: number | null;
   onTogglePlayer: (id: number) => void;
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   // Compute FIR/GIR/Putts stats
   const statsMap = useMemo<Map<number, PlayerStatSummary>>(() => {
     const map = new Map<number, PlayerStatSummary>();
@@ -769,7 +776,7 @@ function PlayerStatsTab({
 
   if (!rounds || rounds.length === 0) {
     return (
-      <Card className="bg-slate-50 border-dashed shadow-none">
+      <Card className="bg-slate-50 dark:bg-slate-900 border-dashed shadow-none">
         <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground text-sm">
           No rounds available
         </CardContent>
@@ -779,7 +786,7 @@ function PlayerStatsTab({
 
   if (mergedStats.length === 0) {
     return (
-      <Card className="bg-slate-50 border-dashed shadow-none">
+      <Card className="bg-slate-50 dark:bg-slate-900 border-dashed shadow-none">
         <CardContent className="p-4 text-center text-muted-foreground text-sm">
           <Target className="w-8 h-8 mx-auto mb-2 opacity-30" />
           <p>No stats data recorded yet.</p>
@@ -792,7 +799,7 @@ function PlayerStatsTab({
   return (
     <div className="space-y-3">
       {sgPlayerCount > 0 && sgPlayerCount < 4 && (
-        <p className="text-[10px] text-amber-600 text-center px-2">
+        <p className="text-[10px] text-amber-600 dark:text-amber-400 text-center px-2">
           Small field — Strokes Gained values may be less meaningful
         </p>
       )}
@@ -800,7 +807,7 @@ function PlayerStatsTab({
       {mergedStats.map(s => (
         <div key={s.playerId} className="space-y-2">
           <Card
-            className="border-0 shadow-sm bg-white cursor-pointer hover:shadow-md transition-all"
+            className="border-0 shadow-sm bg-white dark:bg-slate-800 cursor-pointer hover:shadow-md transition-all"
             onClick={() => onTogglePlayer(s.playerId)}
           >
             <CardContent className="p-3">
@@ -809,9 +816,9 @@ function PlayerStatsTab({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.teamColor }} />
-                    <span className="text-xs font-semibold text-slate-900 truncate">{s.playerName}</span>
+                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">{s.playerName}</span>
                   </div>
-                  <span className="text-[10px] text-slate-500 ml-3.5">{s.teamName}</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-3.5">{s.teamName}</span>
                 </div>
                 <div className="text-right flex-shrink-0 ml-2">
                   {s.sg ? (
@@ -819,10 +826,10 @@ function PlayerStatsTab({
                       <div className={`text-base font-extrabold ${sgColor(s.sg.sgTotal)}`}>
                         {formatSG(s.sg.sgTotal)}
                       </div>
-                      <div className="text-[9px] text-slate-400">{s.sg.holesPlayed} holes</div>
+                      <div className="text-[9px] text-slate-400 dark:text-slate-500">{s.sg.holesPlayed} holes</div>
                     </>
                   ) : (
-                    <span className="text-xs text-slate-400">—</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
                   )}
                 </div>
               </div>
@@ -831,66 +838,66 @@ function PlayerStatsTab({
               <div className="grid grid-cols-5 gap-1">
                 {/* FIR */}
                 <div className="text-center">
-                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400">FIR</div>
+                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500">FIR</div>
                   {s.firTracked > 0 ? (
                     <>
-                      <div className="text-xs font-bold text-blue-600">
+                      <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
                         {Math.round((s.firHits / s.firTracked) * 100)}%
                       </div>
-                      <div className="text-[9px] text-slate-400">{s.firHits}/{s.firTracked}</div>
+                      <div className="text-[9px] text-slate-400 dark:text-slate-500">{s.firHits}/{s.firTracked}</div>
                     </>
                   ) : (
-                    <div className="text-xs text-slate-400">—</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500">—</div>
                   )}
                 </div>
                 {/* GIR */}
                 <div className="text-center">
-                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400">GIR</div>
+                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500">GIR</div>
                   {s.girTracked > 0 ? (
                     <>
-                      <div className="text-xs font-bold text-emerald-600">
+                      <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                         {Math.round((s.girHits / s.girTracked) * 100)}%
                       </div>
-                      <div className="text-[9px] text-slate-400">{s.girHits}/{s.girTracked}</div>
+                      <div className="text-[9px] text-slate-400 dark:text-slate-500">{s.girHits}/{s.girTracked}</div>
                     </>
                   ) : (
-                    <div className="text-xs text-slate-400">—</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500">—</div>
                   )}
                 </div>
                 {/* Putts */}
                 <div className="text-center">
-                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400">Putts</div>
+                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500">Putts</div>
                   {s.puttsTracked > 0 ? (
                     <>
-                      <div className="text-xs font-bold text-slate-700">
+                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
                         {(s.totalPutts / s.puttsTracked).toFixed(1)}
                       </div>
-                      <div className="text-[9px] text-slate-400">{s.totalPutts} tot</div>
+                      <div className="text-[9px] text-slate-400 dark:text-slate-500">{s.totalPutts} tot</div>
                     </>
                   ) : (
-                    <div className="text-xs text-slate-400">—</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500">—</div>
                   )}
                 </div>
                 {/* SG:Putt */}
                 <div className="text-center">
-                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400">SG:P</div>
+                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500">SG:P</div>
                   {s.sg && s.sg.sgPutting !== null ? (
                     <div className={`text-xs font-bold ${sgColor(s.sg.sgPutting)}`}>
                       {formatSG(s.sg.sgPutting)}
                     </div>
                   ) : (
-                    <div className="text-xs text-slate-400">—</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500">—</div>
                   )}
                 </div>
                 {/* SG:T2G */}
                 <div className="text-center">
-                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400">SG:T2G</div>
+                  <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500">SG:T2G</div>
                   {s.sg && s.sg.sgTeeToGreen !== null ? (
                     <div className={`text-xs font-bold ${sgColor(s.sg.sgTeeToGreen)}`}>
                       {formatSG(s.sg.sgTeeToGreen)}
                     </div>
                   ) : (
-                    <div className="text-xs text-slate-400">—</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500">—</div>
                   )}
                 </div>
               </div>
@@ -913,7 +920,7 @@ function PlayerStatsTab({
                     {/* SG by Par type bar chart */}
                     {s.sg.sgByPar.length > 0 && (
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                           SG: Total by Hole Type
                         </p>
                         <div style={{ height: 110 }}>
@@ -924,22 +931,23 @@ function PlayerStatsTab({
                                 sg: parseFloat(d.sg.toFixed(2)),
                                 count: d.holes,
                               }))}
-                              margin={{ top: 18, right: 4, left: 4, bottom: 4 }}
+                              margin={{ top: 18, right: 4, left: 4, bottom: 16 }}
                               barCategoryGap="28%"
                             >
                               <XAxis
                                 dataKey="name"
-                                tick={{ fontSize: 10, fontWeight: 700, fill: "#64748b" }}
+                                tick={{ fontSize: 10, fontWeight: 700, fill: isDark ? "#94a3b8" : "#64748b" }}
                                 axisLine={false}
                                 tickLine={false}
                               />
                               <Bar dataKey="sg" radius={[4, 4, 0, 0]} maxBarSize={46}>
                                 {s.sg.sgByPar.map((d, idx) => (
-                                  <Cell key={idx} fill={sgColorHex(d.sg)} />
+                                  <Cell key={idx} fill={sgColorHex(d.sg, isDark)} />
                                 ))}
                                 <LabelList
                                   content={
                                     <SGBarLabel
+                                      isDark={isDark}
                                       data={s.sg.sgByPar.map(d => ({ sg: d.sg }))}
                                     />
                                   }
@@ -948,7 +956,7 @@ function PlayerStatsTab({
                             </BarChart>
                           </ResponsiveContainer>
                         </div>
-                        <p className="text-[9px] text-slate-400 text-center mt-1">
+                        <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-1">
                           {s.sg.sgByPar.map(d => `Par ${d.par}: ${d.holes} hole${d.holes !== 1 ? "s" : ""}`).join(" · ")}
                         </p>
                       </div>
@@ -957,7 +965,7 @@ function PlayerStatsTab({
                     {/* Per-round summary */}
                     {s.sg.sgByRound.length > 1 && (
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                           SG by Round
                         </p>
                         <div className="space-y-2">
@@ -965,7 +973,7 @@ function PlayerStatsTab({
                             const round = rounds[d.roundIndex];
                             return (
                               <div key={d.roundIndex} className="flex items-center justify-between">
-                                <span className="text-xs text-slate-600">
+                                <span className="text-xs text-slate-600 dark:text-slate-400">
                                   Round {round?.roundNumber ?? d.roundIndex + 1}
                                 </span>
                                 <span className={`text-xs font-bold ${sgColor(d.sg)}`}>
@@ -985,7 +993,7 @@ function PlayerStatsTab({
         </div>
       ))}
 
-      <p className="text-[10px] text-slate-400 text-center px-2">
+      <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center px-2">
         FIR = Fairways in Regulation · GIR = Greens in Regulation · Putts = avg per hole · SG = Strokes Gained vs field
       </p>
     </div>

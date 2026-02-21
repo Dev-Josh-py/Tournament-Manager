@@ -22,8 +22,8 @@ export function TeamBadge({ color, name, size = "md", className }: TeamBadgeProp
 
   return (
     <div className={clsx("flex items-center gap-2", className)}>
-      <div 
-        className={clsx("rounded-full shadow-sm ring-1 ring-black/5", sizeClasses[size])}
+      <div
+        className={clsx("rounded-full shadow-sm ring-1 ring-black/5 dark:ring-white/10", sizeClasses[size])}
         style={{ backgroundColor: color }}
       />
       <span className={clsx("font-medium truncate", textSizeClasses[size])}>

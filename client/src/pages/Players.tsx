@@ -75,7 +75,7 @@ export default function Players() {
             ))
           ) : (
             <div className="text-center py-12 text-muted-foreground">
-              <div className="bg-slate-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-slate-100 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">👥</span>
               </div>
               <p>No players available</p>

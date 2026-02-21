@@ -5,18 +5,18 @@ import { FlagTriangleRight } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
       <Card className="w-full max-w-md shadow-xl border-none">
         <CardContent className="pt-6 text-center space-y-6">
           <div className="flex justify-center">
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
-              <FlagTriangleRight className="h-10 w-10 text-red-600" />
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+              <FlagTriangleRight className="h-10 w-10 text-red-600 dark:text-red-400" />
             </div>
           </div>
           
           <div className="space-y-2">
-            <h1 className="text-3xl font-display font-bold text-slate-900">Out of Bounds!</h1>
-            <p className="text-slate-500">
+            <h1 className="text-3xl font-display font-bold text-slate-900 dark:text-slate-100">Out of Bounds!</h1>
+            <p className="text-slate-500 dark:text-slate-400">
               We couldn't find the page you were looking for. 
               Take a penalty drop and return to the fairway.
             </p>

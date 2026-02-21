@@ -173,7 +173,7 @@ export default function MatchPairingSetup() {
 
   return (
     <PageTransition>
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <Header title="Match Pairing Setup" />
 
         <main className="flex-1 p-4 pb-24 max-w-2xl mx-auto w-full">
@@ -199,12 +199,12 @@ export default function MatchPairingSetup() {
           </Card>
 
           {!isMatchPlayRound && selectedRoundId && (
-            <Card className="mb-6 border-yellow-200 bg-yellow-50">
+            <Card className="mb-6 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20">
               <CardContent className="pt-6 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-yellow-900">Not a Match Play Round</p>
-                  <p className="text-xs text-yellow-700 mt-1">This round is not configured as a match play round.</p>
+                  <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">Not a Match Play Round</p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-200 mt-1">This round is not configured as a match play round.</p>
                 </div>
               </CardContent>
             </Card>
@@ -213,12 +213,12 @@ export default function MatchPairingSetup() {
           {selectedRoundId && isMatchPlayRound && (
             <>
               {/* Info */}
-              <Card className="mb-6 border-blue-200 bg-blue-50">
+              <Card className="mb-6 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
                 <CardContent className="pt-6">
-                  <p className="text-sm text-blue-900">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
                     Create match pairings for {matches.length > 0 ? `${Math.ceil(6 / 2)}` : '3'} matches (2 players per match).
                   </p>
-                  <p className="text-xs text-blue-700 mt-2">
+                  <p className="text-xs text-blue-700 dark:text-blue-200 mt-2">
                     Unassigned players: {unassignedPlayers.length}
                   </p>
                 </CardContent>
@@ -227,7 +227,7 @@ export default function MatchPairingSetup() {
               {/* Matches */}
               <div className="space-y-4 mb-6">
                 {matches.map((match) => (
-                  <Card key={match.matchNumber} className="border-slate-200">
+                  <Card key={match.matchNumber} className="border-slate-200 dark:border-slate-700">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-base">Match {match.matchNumber}</CardTitle>
@@ -244,7 +244,7 @@ export default function MatchPairingSetup() {
                     <CardContent className="space-y-3">
                       {/* Player 1 */}
                       <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Player 1</label>
+                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Player 1</label>
                         <Select
                           value={String(match.player1Id || "")}
                           onValueChange={(val) => updateMatch(match.matchNumber, val ? Number(val) : null, match.player2Id)}
@@ -274,7 +274,7 @@ export default function MatchPairingSetup() {
 
                       {/* Player 2 */}
                       <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Player 2</label>
+                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Player 2</label>
                         <Select
                           value={String(match.player2Id || "")}
                           onValueChange={(val) => updateMatch(match.matchNumber, match.player1Id, val ? Number(val) : null)}

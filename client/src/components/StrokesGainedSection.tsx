@@ -9,6 +9,7 @@ import {
   LabelList,
 } from "recharts";
 import { calculateStrokesGained } from "@/lib/strokes-gained";
+import { useTheme } from "@/lib/theme";
 import type { Score } from "@shared/schema";
 
 interface StrokesGainedSectionProps {
@@ -23,21 +24,25 @@ function formatSG(value: number): string {
 }
 
 function sgColor(value: number | null): string {
-  if (value === null) return "text-slate-400";
-  if (value > 0) return "text-emerald-600";
-  if (value < 0) return "text-red-500";
-  return "text-slate-600";
+  if (value === null) return "text-slate-400 dark:text-slate-500";
+  if (value > 0) return "text-emerald-600 dark:text-emerald-400";
+  if (value < 0) return "text-red-500 dark:text-red-400";
+  return "text-slate-600 dark:text-slate-400";
 }
 
 // Bar chart label showing SG value above each bar
-function SGBarLabel({ x, y, width, index, data }: any) {
+function SGBarLabel({ x, y, width, height, index, data, isDark }: any) {
   const entry = data?.[index];
   if (!entry) return null;
-  const color = entry.sg >= 0 ? "#16a34a" : "#ef4444";
+  const isPositive = entry.sg >= 0;
+  const color = isPositive
+    ? (isDark ? "#4ade80" : "#16a34a")
+    : (isDark ? "#f87171" : "#ef4444");
+  const labelY = isPositive ? (y ?? 0) - 5 : (y ?? 0) + (height ?? 0) + 12;
   return (
     <text
       x={(x ?? 0) + (width ?? 0) / 2}
-      y={(y ?? 0) - 5}
+      y={labelY}
       textAnchor="middle"
       style={{ fontSize: 10, fontWeight: 800, fill: color }}
     >
@@ -47,6 +52,8 @@ function SGBarLabel({ x, y, width, index, data }: any) {
 }
 
 export function StrokesGainedSection({ rounds, allScoresData, players }: StrokesGainedSectionProps) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
 
   const sgData = useMemo(() => {
@@ -70,31 +77,31 @@ export function StrokesGainedSection({ rounds, allScoresData, players }: Strokes
     <div className="space-y-3">
       {/* Section header */}
       <div className="flex items-center gap-2 px-2 pt-4 pb-1">
-        <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           Strokes Gained vs Field
         </span>
-        <div className="h-px flex-1 bg-slate-200" />
+        <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
       </div>
 
       {totalPlayers < 4 && (
-        <p className="text-[10px] text-amber-600 text-center px-2">
+        <p className="text-[10px] text-amber-600 dark:text-amber-400 text-center px-2">
           Small field — values may be less meaningful
         </p>
       )}
 
       {/* Column headers */}
       <div className="grid grid-cols-4 gap-1 px-2 mb-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Player</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">SG:Total</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">SG:Putt</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">SG:T2G</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Player</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">SG:Total</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">SG:Putt</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">SG:T2G</span>
       </div>
 
       {rankedPlayers.map(({ player, sg }) => (
         <div key={player.id} className="space-y-2">
           <Card
-            className="border-0 shadow-sm bg-white cursor-pointer hover:shadow-md transition-all"
+            className="border-0 shadow-sm bg-white dark:bg-slate-800 cursor-pointer hover:shadow-md transition-all"
             onClick={() => setExpandedPlayerId(prev => prev === player.id ? null : player.id)}
           >
             <CardContent className="p-3">
@@ -106,9 +113,9 @@ export function StrokesGainedSection({ rounds, allScoresData, players }: Strokes
                       className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: player.team?.color || "#888" }}
                     />
-                    <span className="text-xs font-semibold text-slate-900 truncate">{player.name}</span>
+                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">{player.name}</span>
                   </div>
-                  <span className="text-[10px] text-slate-500 ml-3.5">{player.team?.name || ""}</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-3.5">{player.team?.name || ""}</span>
                 </div>
 
                 {/* SG: Total */}
@@ -116,7 +123,7 @@ export function StrokesGainedSection({ rounds, allScoresData, players }: Strokes
                   <div className={`text-sm font-bold ${sgColor(sg.sgTotal)}`}>
                     {formatSG(sg.sgTotal)}
                   </div>
-                  <div className="text-[9px] text-slate-500">{sg.holesPlayed} holes</div>
+                  <div className="text-[9px] text-slate-500 dark:text-slate-400">{sg.holesPlayed} holes</div>
                 </div>
 
                 {/* SG: Putting */}
@@ -152,7 +159,7 @@ export function StrokesGainedSection({ rounds, allScoresData, players }: Strokes
                   {/* SG by Par type bar chart */}
                   {sg.sgByPar.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                         SG: Total by Hole Type
                       </p>
                       <div style={{ height: 110 }}>
@@ -163,22 +170,23 @@ export function StrokesGainedSection({ rounds, allScoresData, players }: Strokes
                               sg: parseFloat(d.sg.toFixed(2)),
                               count: d.holes,
                             }))}
-                            margin={{ top: 18, right: 4, left: 4, bottom: 4 }}
+                            margin={{ top: 18, right: 4, left: 4, bottom: 16 }}
                             barCategoryGap="28%"
                           >
                             <XAxis
                               dataKey="name"
-                              tick={{ fontSize: 10, fontWeight: 700, fill: "#64748b" }}
+                              tick={{ fontSize: 10, fontWeight: 700, fill: isDark ? "#94a3b8" : "#64748b" }}
                               axisLine={false}
                               tickLine={false}
                             />
                             <Bar dataKey="sg" radius={[4, 4, 0, 0]} maxBarSize={46}>
                               {sg.sgByPar.map((d, idx) => (
-                                <Cell key={idx} fill={d.sg >= 0 ? "#22c55e" : "#ef4444"} />
+                                <Cell key={idx} fill={d.sg >= 0 ? (isDark ? "#4ade80" : "#22c55e") : (isDark ? "#f87171" : "#ef4444")} />
                               ))}
                               <LabelList
                                 content={
                                   <SGBarLabel
+                                    isDark={isDark}
                                     data={sg.sgByPar.map(d => ({
                                       sg: d.sg,
                                     }))}
@@ -189,7 +197,7 @@ export function StrokesGainedSection({ rounds, allScoresData, players }: Strokes
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
-                      <p className="text-[9px] text-slate-400 text-center mt-1">
+                      <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-1">
                         {sg.sgByPar.map(d => `Par ${d.par}: ${d.holes} hole${d.holes !== 1 ? "s" : ""}`).join(" · ")}
                       </p>
                     </div>
@@ -198,7 +206,7 @@ export function StrokesGainedSection({ rounds, allScoresData, players }: Strokes
                   {/* Per-round summary */}
                   {sg.sgByRound.length > 1 && rounds && (
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                         SG by Round
                       </p>
                       <div className="space-y-2">
@@ -206,7 +214,7 @@ export function StrokesGainedSection({ rounds, allScoresData, players }: Strokes
                           const round = rounds[d.roundIndex];
                           return (
                             <div key={d.roundIndex} className="flex items-center justify-between">
-                              <span className="text-xs text-slate-600">
+                              <span className="text-xs text-slate-600 dark:text-slate-400">
                                 Round {round?.roundNumber ?? d.roundIndex + 1}
                               </span>
                               <span className={`text-xs font-bold ${sgColor(d.sg)}`}>
@@ -225,7 +233,7 @@ export function StrokesGainedSection({ rounds, allScoresData, players }: Strokes
         </div>
       ))}
 
-      <p className="text-[10px] text-slate-400 text-center px-2">
+      <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center px-2">
         SG = Strokes Gained vs field average · Positive = better than peers
       </p>
     </div>

@@ -181,7 +181,7 @@ export default function Pick9Setup() {
 
   return (
     <PageTransition>
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
         <Header title="Pick 9 Setup" />
 
         <main className="flex-1 p-4 pb-24 max-w-2xl mx-auto w-full">
@@ -207,12 +207,12 @@ export default function Pick9Setup() {
           </Card>
 
           {!isPick9Round && selectedRoundId && (
-            <Card className="mb-6 border-yellow-200 bg-yellow-50">
+            <Card className="mb-6 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20">
               <CardContent className="pt-6 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-yellow-900">Not a Pick 9 Round</p>
-                  <p className="text-xs text-yellow-700 mt-1">This round is not configured as a Pick 9 round.</p>
+                  <p className="text-sm font-medium text-yellow-900 dark:text-yellow-300">Not a Pick 9 Round</p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">This round is not configured as a Pick 9 round.</p>
                 </div>
               </CardContent>
             </Card>
@@ -221,15 +221,15 @@ export default function Pick9Setup() {
           {selectedRoundId && isPick9Round && (
             <>
               {/* Info */}
-              <Card className="mb-6 border-blue-200 bg-blue-50">
+              <Card className="mb-6 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
                 <CardContent className="pt-6 space-y-2">
-                  <p className="text-sm font-medium text-blue-900">Assignment Status</p>
-                  <div className="flex gap-4 text-xs text-blue-700">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-300">Assignment Status</p>
+                  <div className="flex gap-4 text-xs text-blue-700 dark:text-blue-400">
                     <span>Front 9: <strong>{front9Count}</strong></span>
                     <span>Back 9: <strong>{back9Count}</strong></span>
                     <span>Unassigned: <strong>{unassignedCount}</strong></span>
                   </div>
-                  <p className="text-xs text-blue-700 mt-2">
+                  <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">
                     Each team must have one player on holes 1-9 and one on holes 10-18.
                   </p>
                 </CardContent>
@@ -238,7 +238,7 @@ export default function Pick9Setup() {
               {/* Players by Team */}
               <div className="space-y-6 mb-6">
                 {Array.from(playersByTeam.entries()).map(([teamName, teamPlayers]) => (
-                  <Card key={teamName} className="border-slate-200">
+                  <Card key={teamName} className="border-slate-200 dark:border-slate-700">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base">{teamName}</CardTitle>
                     </CardHeader>
@@ -248,8 +248,8 @@ export default function Pick9Setup() {
                         return (
                           <div key={player.id} className="flex items-center gap-3">
                             <div className="flex-1">
-                              <p className="text-sm font-medium text-slate-900">{player.name}</p>
-                              <p className="text-xs text-slate-500">Handicap: {String(player.handicap)}</p>
+                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{player.name}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">Handicap: {String(player.handicap)}</p>
                             </div>
                             <Select
                               value={assignment?.holeRange || ""}
@@ -291,7 +291,7 @@ export default function Pick9Setup() {
                 <Button
                   onClick={handleClearAssignments}
                   variant="outline"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                 >
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Clear

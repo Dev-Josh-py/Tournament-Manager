@@ -1,4 +1,5 @@
 import { clsx } from "clsx";
+import { useTheme } from "@/lib/theme";
 
 interface Score {
   id: number;
@@ -28,6 +29,8 @@ interface ScoreboardTableProps {
 }
 
 export function ScoreboardTable({ playerScores, holes, roundFormat, compact = false, courseHandicap, showStats = false }: ScoreboardTableProps) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   // Sort scores by hole number
   const sortedScores = [...playerScores].sort((a, b) => a.holeNumber - b.holeNumber);
 
@@ -43,13 +46,13 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
     const base = "inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 text-[10px] sm:text-xs font-bold leading-none";
 
     if (diff <= -2) {
-      // Eagle: double circle — outline-offset creates a clean, consistent white gap
+      // Eagle: double circle — outline-offset creates a clean, consistent gap
       return (
         <span
-          className={`${base} rounded-full border-2 border-amber-600 text-amber-700`}
+          className={`${base} rounded-full border-2 border-amber-600 dark:border-amber-500 text-amber-700 dark:text-amber-400`}
           style={{
-            background: "rgba(245,158,11,0.12)",
-            outline: "2px solid #d97706",
+            background: isDark ? "rgba(245,158,11,0.20)" : "rgba(245,158,11,0.12)",
+            outline: `2px solid ${isDark ? "#f59e0b" : "#d97706"}`,
             outlineOffset: "2px",
           }}
         >
@@ -61,8 +64,8 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
       // Birdie: single circle, very light tint
       return (
         <span
-          className={`${base} rounded-full border-2 border-red-600 text-red-700`}
-          style={{ background: "rgba(239,68,68,0.10)" }}
+          className={`${base} rounded-full border-2 border-red-600 dark:border-red-500 text-red-700 dark:text-red-400`}
+          style={{ background: isDark ? "rgba(239,68,68,0.20)" : "rgba(239,68,68,0.10)" }}
         >
           {score}
         </span>
@@ -71,7 +74,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
     if (diff === 0) {
       // Par: standard shading, no border (unchanged)
       return (
-        <span className={`${base} rounded bg-gray-100 text-gray-900`}>
+        <span className={`${base} rounded bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-gray-100`}>
           {score}
         </span>
       );
@@ -80,20 +83,20 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
       // Bogey: square with blue border, very light tint
       return (
         <span
-          className={`${base} border-2 border-blue-500 text-blue-600`}
-          style={{ background: "rgba(59,130,246,0.10)" }}
+          className={`${base} border-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400`}
+          style={{ background: isDark ? "rgba(59,130,246,0.20)" : "rgba(59,130,246,0.10)" }}
         >
           {score}
         </span>
       );
     }
-    // Double+: double square — outline-offset creates a clean, consistent white gap
+    // Double+: double square — outline-offset creates a clean, consistent gap
     return (
       <span
-        className={`${base} border-2 border-blue-800 text-blue-900`}
+        className={`${base} border-2 border-blue-800 dark:border-blue-500 text-blue-900 dark:text-blue-400`}
         style={{
-          background: "rgba(30,64,175,0.10)",
-          outline: "2px solid #1e40af",
+          background: isDark ? "rgba(59,130,246,0.20)" : "rgba(30,64,175,0.10)",
+          outline: `2px solid ${isDark ? "#3b82f6" : "#1e40af"}`,
           outlineOffset: "2px",
         }}
       >
@@ -190,7 +193,7 @@ export function ScoreboardTable({ playerScores, holes, roundFormat, compact = fa
                     <td key={h} className="px-0.5 sm:px-1 py-1 sm:py-1.5 text-center">
                       {grossScore
                         ? <ScoreBadge score={grossScore} par={par} />
-                        : <span className="text-slate-400 text-xs">-</span>
+                        : <span className="text-slate-400 dark:text-slate-600 text-xs">-</span>
                       }
                     </td>
                   );

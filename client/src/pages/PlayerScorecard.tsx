@@ -20,13 +20,13 @@ const formatTypeName = (type: string) =>
 
 const getFormatBadgeColor = (formatType: string) => {
   switch (formatType) {
-    case "individual_net": return "bg-blue-100 text-blue-800 border-blue-200";
-    case "individual_match_play": return "bg-rose-100 text-rose-800 border-rose-200";
-    case "combined_stableford": return "bg-purple-100 text-purple-800 border-purple-200";
-    case "better_ball_stableford": return "bg-amber-100 text-amber-800 border-amber-200";
-    case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200";
-    case "individual_stableford": return "bg-orange-100 text-orange-800 border-orange-200";
-    default: return "bg-slate-100 text-slate-800 border-slate-200";
+    case "individual_net": return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
+    case "individual_match_play": return "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800";
+    case "combined_stableford": return "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
+    case "better_ball_stableford": return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
+    case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800";
+    case "individual_stableford": return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
+    default: return "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600";
   }
 };
 
@@ -295,7 +295,7 @@ function RoundSummaryCard({
 
   if (playerScores.length === 0) {
     return (
-      <Card className="bg-slate-50 border-dashed shadow-none">
+      <Card className="bg-slate-50 dark:bg-slate-900 border-dashed shadow-none">
         <CardContent className="p-4 text-center text-sm text-muted-foreground">
           No scores recorded
         </CardContent>
@@ -356,7 +356,7 @@ function RoundDetailCard({
 
   if (playerScores.length === 0) {
     return (
-      <Card className="bg-slate-50 border-dashed shadow-none">
+      <Card className="bg-slate-50 dark:bg-slate-900 border-dashed shadow-none">
         <CardContent className="p-8 text-center text-muted-foreground">
           No scores recorded for this round
         </CardContent>
@@ -451,11 +451,11 @@ function RoundDetailCard({
                 return (
                   <div
                     key={hole.number}
-                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition"
+                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                   >
                     <div className="flex items-center gap-3 flex-1">
                       <div className="font-bold w-8">H{hole.number}</div>
-                      <div className="text-sm text-slate-600">Par {hole.par} (SI {hole.strokeIndex})</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">Par {hole.par} (SI {hole.strokeIndex})</div>
                     </div>
 
                     {isEditing ? (
@@ -473,7 +473,7 @@ function RoundDetailCard({
                           size="sm"
                           onClick={handleSaveScore}
                           disabled={submitScore.isPending}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
                         >
                           {submitScore.isPending ? (
                             <Loader2 className="w-4 h-4 animate-spin" />

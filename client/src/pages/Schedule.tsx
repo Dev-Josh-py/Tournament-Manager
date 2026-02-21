@@ -26,13 +26,13 @@ function HandicapStatusIndicator({ roundId }: { roundId: number }) {
     <div className="flex items-center gap-1">
       {allPlayersHaveHandicaps ? (
         <>
-          <CheckCircle2 className="w-4 h-4 text-green-600" />
-          <span className="text-xs text-green-600 font-medium">HCP Set</span>
+          <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <span className="text-xs text-green-600 dark:text-green-400 font-medium">HCP Set</span>
         </>
       ) : (
         <>
-          <AlertCircle className="w-4 h-4 text-amber-600" />
-          <span className="text-xs text-amber-600 font-medium">HCP Pending</span>
+          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">HCP Pending</span>
         </>
       )}
     </div>
@@ -48,13 +48,13 @@ function GroupingsStatusIndicator({ roundId }: { roundId: number }) {
     <div className="flex items-center gap-1">
       {groupingsConfigured ? (
         <>
-          <CheckCircle2 className="w-4 h-4 text-green-600" />
-          <span className="text-xs text-green-600 font-medium">Groups Set</span>
+          <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <span className="text-xs text-green-600 dark:text-green-400 font-medium">Groups Set</span>
         </>
       ) : (
         <>
-          <AlertCircle className="w-4 h-4 text-amber-600" />
-          <span className="text-xs text-amber-600 font-medium">Groups Pending</span>
+          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Groups Pending</span>
         </>
       )}
     </div>
@@ -70,13 +70,13 @@ function MatchesStatusIndicator({ roundId }: { roundId: number }) {
     <div className="flex items-center gap-1">
       {matchesConfigured ? (
         <>
-          <CheckCircle2 className="w-4 h-4 text-green-600" />
-          <span className="text-xs text-green-600 font-medium">Matches Set</span>
+          <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <span className="text-xs text-green-600 dark:text-green-400 font-medium">Matches Set</span>
         </>
       ) : (
         <>
-          <AlertCircle className="w-4 h-4 text-amber-600" />
-          <span className="text-xs text-amber-600 font-medium">Matches Pending</span>
+          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Matches Pending</span>
         </>
       )}
     </div>
@@ -93,13 +93,13 @@ function Pick9StatusIndicator({ roundId }: { roundId: number }) {
     <div className="flex items-center gap-1">
       {allAssigned ? (
         <>
-          <CheckCircle2 className="w-4 h-4 text-green-600" />
-          <span className="text-xs text-green-600 font-medium">Pick 9 Set</span>
+          <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <span className="text-xs text-green-600 dark:text-green-400 font-medium">Pick 9 Set</span>
         </>
       ) : (
         <>
-          <AlertCircle className="w-4 h-4 text-amber-600" />
-          <span className="text-xs text-amber-600 font-medium">Pick 9 Pending</span>
+          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Pick 9 Pending</span>
         </>
       )}
     </div>
@@ -111,13 +111,13 @@ export default function Schedule() {
 
   const getFormatBadgeColor = (formatType: string) => {
     switch (formatType) {
-      case "individual_net": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "individual_match_play": return "bg-rose-100 text-rose-800 border-rose-200";
-      case "combined_stableford": return "bg-purple-100 text-purple-800 border-purple-200";
-      case "better_ball_stableford": return "bg-amber-100 text-amber-800 border-amber-200";
-      case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200";
-      case "individual_stableford": return "bg-orange-100 text-orange-800 border-orange-200";
-      default: return "bg-slate-100 text-slate-800 border-slate-200";
+      case "individual_net": return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
+      case "individual_match_play": return "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800";
+      case "combined_stableford": return "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
+      case "better_ball_stableford": return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
+      case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800";
+      case "individual_stableford": return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
+      default: return "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600";
     }
   };
 
@@ -132,7 +132,7 @@ export default function Schedule() {
       <PageTransition>
         <main className="max-w-3xl mx-auto px-4 space-y-6">
           {isLoading ? (
-            [1, 2, 3].map(i => <div key={i} className="h-40 bg-white rounded-xl animate-pulse" />)
+            [1, 2, 3].map(i => <div key={i} className="h-40 bg-white dark:bg-slate-800 rounded-xl animate-pulse" />)
           ) : (
             rounds?.map((round, index) => (
               <Card key={round.id} className="overflow-hidden border-border/50 shadow-md">
@@ -155,7 +155,7 @@ export default function Schedule() {
                       )}
                     </div>
                     {round.isCompleted ? (
-                      <Badge className="bg-slate-200 text-slate-600 hover:bg-slate-300">Completed</Badge>
+                      <Badge className="bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600">Completed</Badge>
                     ) : (
                       <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">Upcoming</Badge>
                     )}
@@ -176,14 +176,14 @@ export default function Schedule() {
                     </div>
                   )}
                   
-                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2">
+                  <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3 border border-slate-100 dark:border-slate-700 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-muted-foreground uppercase">Format</span>
                       <Badge className={clsx("text-[10px]", getFormatBadgeColor(round.formatType))}>
                         {formatTypeName(round.formatType)}
                       </Badge>
                     </div>
-                    <div className="flex gap-2 text-sm text-slate-700 leading-relaxed">
+                    <div className="flex gap-2 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                       <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary" />
                       <p>{round.description}</p>
                     </div>

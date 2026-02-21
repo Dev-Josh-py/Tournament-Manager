@@ -30,14 +30,14 @@ export default function Leaderboard() {
         <main className="max-w-3xl mx-auto px-4 space-y-6">
 
           {overallError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-400">
               <p className="font-bold">Error loading tournament leaderboard:</p>
               <p className="text-sm">{(overallError as Error).message}</p>
             </div>
           )}
 
           {roundsError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-400">
               <p className="font-bold">Error loading rounds:</p>
               <p className="text-sm">{(roundsError as Error).message}</p>
             </div>
@@ -68,7 +68,7 @@ export default function Leaderboard() {
                     key={entry.teamId}
                     className={clsx(
                       "border-none shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden relative cursor-pointer",
-                      idx === 0 ? "bg-gradient-to-r from-yellow-50 to-white border-l-4 border-l-yellow-400" : "bg-white"
+                      idx === 0 ? "bg-gradient-to-r from-yellow-50 to-white dark:from-yellow-900/20 dark:to-slate-800 border-l-4 border-l-yellow-400 dark:border-l-yellow-600" : "bg-white dark:bg-slate-800"
                     )}
                     onClick={() => setExpandedTeamId(expandedTeamId === entry.teamId ? null : entry.teamId)}
                   >
@@ -83,7 +83,7 @@ export default function Leaderboard() {
                             className="w-2.5 h-2.5 rounded-full shadow-sm flex-shrink-0"
                             style={{ backgroundColor: entry.teamColor }}
                           />
-                          <span className="font-semibold text-sm text-slate-900 truncate">
+                          <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">
                             {entry.teamName}
                           </span>
                         </div>
@@ -91,15 +91,15 @@ export default function Leaderboard() {
 
                       <div className="text-right flex-shrink-0 flex items-center gap-2">
                         <div>
-                          <span className="text-xl font-bold font-display text-slate-900">
+                          <span className="text-xl font-bold font-display text-slate-900 dark:text-slate-100">
                             {entry.totalPoints}
                           </span>
-                          <span className="block text-[10px] uppercase tracking-wider text-slate-600 font-bold">
+                          <span className="block text-[10px] uppercase tracking-wider text-slate-600 dark:text-slate-400 font-bold">
                             pts
                           </span>
                         </div>
                         <ChevronDown className={clsx(
-                          "w-4 h-4 text-slate-400 transition-transform duration-200",
+                          "w-4 h-4 text-slate-400 dark:text-slate-500 transition-transform duration-200",
                           expandedTeamId === entry.teamId && "rotate-180"
                         )} />
                       </div>
@@ -151,11 +151,11 @@ function PlayerBreakdownRow({ breakdown }: { breakdown: PlayerBreakdown }) {
   return (
     <div className="flex items-center justify-between py-1">
       <div className="flex items-center gap-1.5 min-w-0">
-        <span className="text-xs text-slate-700 font-medium truncate">
+        <span className="text-xs text-slate-700 dark:text-slate-300 font-medium truncate">
           {breakdown.playerName}
         </span>
         {breakdown.description && (
-          <span className="text-[10px] text-slate-500 truncate">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
             ({breakdown.description})
           </span>
         )}
@@ -164,7 +164,7 @@ function PlayerBreakdownRow({ breakdown }: { breakdown: PlayerBreakdown }) {
         {hasIndividualPoints ? (
           <span className="text-xs font-semibold text-primary">+{breakdown.pointsEarned} pts</span>
         ) : (
-          <span className="text-xs text-slate-600">{breakdown.metric} {breakdown.metricLabel}</span>
+          <span className="text-xs text-slate-600 dark:text-slate-400">{breakdown.metric} {breakdown.metricLabel}</span>
         )}
       </div>
     </div>
@@ -184,7 +184,7 @@ const FORMAT_LABELS: Record<string, string> = {
 function TournamentTeamExpanded({ teamId, rounds }: { teamId: number; rounds: Round[] }) {
   return (
     <div
-      className="px-3 pb-3 border-t border-slate-100 animate-in slide-in-from-top-2 fade-in duration-200"
+      className="px-3 pb-3 border-t border-slate-100 dark:border-slate-700 animate-in slide-in-from-top-2 fade-in duration-200"
       onClick={(e) => e.stopPropagation()}
     >
       {rounds.map((round) => (
@@ -210,13 +210,13 @@ function TournamentRoundRow({ round, teamId }: { round: Round; teamId: number })
   const breakdowns = teamEntry.playerBreakdown?.filter((b) => b.teamId === teamId) || [];
 
   return (
-    <div className="py-2 border-b border-slate-50 last:border-b-0">
+    <div className="py-2 border-b border-slate-50 dark:border-slate-900 last:border-b-0">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[11px] font-semibold text-slate-600">
+        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
           R{round.roundNumber}: {FORMAT_LABELS[round.formatType] || round.formatType} ({round.course?.name})
         </span>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded px-1 py-0.5">
+          <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 rounded px-1 py-0.5">
             {ordinalSuffix(teamEntry.rank)}
           </span>
           <span className="text-xs font-bold text-primary">+{teamEntry.points}</span>
@@ -233,11 +233,11 @@ function RoundLeaderboard({ roundId, formatType }: { roundId: number; formatType
   const { data, isLoading } = useRoundLeaderboard(roundId);
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
 
-  if (isLoading) return <div className="h-16 bg-white/50 rounded-xl animate-pulse" />;
+  if (isLoading) return <div className="h-16 bg-white/50 dark:bg-slate-800/50 rounded-xl animate-pulse" />;
 
   if (!data || data.length === 0) {
     return (
-      <Card className="bg-slate-50 border-dashed shadow-none">
+      <Card className="bg-slate-50 dark:bg-slate-900 border-dashed shadow-none">
         <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground text-sm">
           <AlertCircle className="w-4 h-4" /> No scores posted yet
         </CardContent>
@@ -250,10 +250,10 @@ function RoundLeaderboard({ roundId, formatType }: { roundId: number; formatType
   return (
     <div className="space-y-3">
       {isMatchPlay && (
-        <Card className="bg-blue-50 border-blue-200 shadow-sm">
+        <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shadow-sm">
           <CardContent className="p-3 flex items-start gap-2">
-            <Swords className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-900">
+            <Swords className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-900 dark:text-blue-300">
               <span className="font-semibold block mb-1">Match Play Results</span>
               <span className="text-xs">8 pts for match win, 3 pts for loss — no draws (playoff if all square)</span>
             </div>
@@ -264,20 +264,20 @@ function RoundLeaderboard({ roundId, formatType }: { roundId: number; formatType
         {data.map((entry) => (
           <Card
             key={entry.teamId}
-            className="border-0 shadow-sm bg-white/80 cursor-pointer"
+            className="border-0 shadow-sm bg-white/80 dark:bg-slate-800/80 cursor-pointer"
             onClick={() => setExpandedTeamId(expandedTeamId === entry.teamId ? null : entry.teamId)}
           >
             <CardContent className="p-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-mono text-xs font-bold text-slate-700 w-4 text-center flex-shrink-0">
+                  <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 w-4 text-center flex-shrink-0">
                     {entry.rank}
                   </span>
                   <div className="min-w-0">
-                    <span className="font-semibold text-sm text-slate-900 block truncate">
+                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 block truncate">
                       {entry.teamName}
                     </span>
-                    <span className="text-[11px] text-slate-600">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-400">
                       {isMatchPlay ? `${entry.scoreMetric} pts` : `Score: ${entry.scoreMetric}`}
                     </span>
                   </div>
@@ -285,17 +285,17 @@ function RoundLeaderboard({ roundId, formatType }: { roundId: number; formatType
                 <div className="text-right flex-shrink-0 flex items-center gap-1.5">
                   <div>
                     <span className="font-bold text-primary text-base">+{entry.points}</span>
-                    <span className="text-[9px] text-slate-600 block uppercase font-bold">pts</span>
+                    <span className="text-[9px] text-slate-600 dark:text-slate-400 block uppercase font-bold">pts</span>
                   </div>
                   <ChevronDown className={clsx(
-                    "w-3.5 h-3.5 text-slate-400 transition-transform duration-200",
+                    "w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200",
                     expandedTeamId === entry.teamId && "rotate-180"
                   )} />
                 </div>
               </div>
               {expandedTeamId === entry.teamId && entry.playerBreakdown && entry.playerBreakdown.length > 0 && (
                 <div
-                  className="mt-2 pt-2 border-t border-slate-100 animate-in slide-in-from-top-2 fade-in duration-200"
+                  className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 animate-in slide-in-from-top-2 fade-in duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {entry.playerBreakdown.map((b) => (
@@ -341,16 +341,16 @@ function HoleCell({ holeNumber, p1Points, p2Points, p1Gross, p2Gross, p1TeamColo
 
   return (
     <div
-      className="aspect-square flex flex-col items-center justify-center rounded border text-center bg-white relative overflow-hidden min-w-0"
+      className="aspect-square flex flex-col items-center justify-center rounded border text-center bg-white dark:bg-slate-800 relative overflow-hidden min-w-0"
       style={{
         boxShadow: `0 0 8px ${glowColor}${Math.round(glowOpacity * 255).toString(16).padStart(2, '0')}`,
       }}
     >
-      <div className="text-[9px] sm:text-xs font-bold text-slate-600 leading-none">{holeNumber}</div>
+      <div className="text-[9px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 leading-none">{holeNumber}</div>
       {p1Gross !== null && p1Gross !== undefined && p2Gross !== null && p2Gross !== undefined && (
         <div className="flex flex-col text-center text-[7px] sm:text-[9px] leading-tight mt-0.5">
-          <div className="font-semibold text-slate-700">{p1Gross}<span className="text-slate-400">({p1Points})</span></div>
-          <div className="font-semibold text-slate-700">{p2Gross}<span className="text-slate-400">({p2Points})</span></div>
+          <div className="font-semibold text-slate-700 dark:text-slate-300">{p1Gross}<span className="text-slate-400 dark:text-slate-500">({p1Points})</span></div>
+          <div className="font-semibold text-slate-700 dark:text-slate-300">{p2Gross}<span className="text-slate-400 dark:text-slate-500">({p2Points})</span></div>
         </div>
       )}
     </div>
@@ -417,9 +417,9 @@ function PlayerInfo({ playerName, teamName, teamColor, holesWon, totalStableford
           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
           style={{ backgroundColor: teamColor || "#999" }}
         />
-        <p className="font-semibold text-xs sm:text-sm text-slate-900 truncate">{playerName}</p>
+        <p className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">{playerName}</p>
       </div>
-      <div className="text-[10px] sm:text-xs text-slate-600 ml-4">
+      <div className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 ml-4">
         {holesWon} holes | {totalStableford} pts
       </div>
     </div>
@@ -569,14 +569,14 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
   const player2Team = playerTeams[player2Id];
 
   return (
-    <Card className="border-0 shadow-sm bg-white">
+    <Card className="border-0 shadow-sm bg-white dark:bg-slate-800">
       <CardContent className="p-3 sm:p-4">
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm font-semibold text-slate-600">Match {pairing.matchNumber}</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">Match {pairing.matchNumber}</span>
             <div className="text-right min-w-0 ml-2">
-              <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">{getCurrentStatus()}</div>
-              <div className="text-[10px] sm:text-xs text-slate-600">
+              <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{getCurrentStatus()}</div>
+              <div className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400">
                 {matchDecidedHole !== -1 ? getMatchStatusDisplay() : `Thru ${holesPlayed}`}
               </div>
             </div>
@@ -602,7 +602,7 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
 
         {holesPlayed > 0 && (
           <>
-            <div className="text-[10px] sm:text-xs text-slate-600 mb-1.5">
+            <div className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 mb-1.5">
               {holesPlayed} of 18 holes played
             </div>
             <HoleByHoleGrid
@@ -625,8 +625,8 @@ function MatchCard({ pairing, scores, playerTeams, playerNames }: MatchCardProps
 
         {/* Playoff winner selection - shown when match is all square after 18 holes */}
         {holesPlayed === 18 && finalMatchStatus === 0 && !pairing.winnerId && (
-          <div className="mt-3 pt-3 border-t border-slate-200">
-            <p className="text-xs font-semibold text-slate-700 mb-2 text-center">Select Playoff Winner</p>
+          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 text-center">Select Playoff Winner</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setMatchWinner.mutate({ matchId: pairing.id, winnerId: player1Id })}
@@ -688,7 +688,7 @@ function MatchRoundScorecard({ roundId }: MatchRoundScorecardProps) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="h-48 bg-white/50 rounded-lg animate-pulse" />
+          <div key={i} className="h-48 bg-white/50 dark:bg-slate-800/50 rounded-lg animate-pulse" />
         ))}
       </div>
     );
@@ -696,7 +696,7 @@ function MatchRoundScorecard({ roundId }: MatchRoundScorecardProps) {
 
   if (!pairings || pairings.length === 0) {
     return (
-      <Card className="bg-slate-50 border-dashed shadow-none">
+      <Card className="bg-slate-50 dark:bg-slate-900 border-dashed shadow-none">
         <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground text-sm">
           <AlertCircle className="w-4 h-4" /> No matches configured
         </CardContent>
@@ -729,7 +729,7 @@ function MatchPlayLiveScoreboard({ rounds }: MatchPlayLiveScorecardProps) {
 
   if (!matchPlayRounds || matchPlayRounds.length === 0) {
     return (
-      <Card className="bg-slate-50 border-dashed shadow-none">
+      <Card className="bg-slate-50 dark:bg-slate-900 border-dashed shadow-none">
         <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground text-sm">
           <Swords className="w-4 h-4" /> No match play rounds available
         </CardContent>
@@ -742,10 +742,10 @@ function MatchPlayLiveScoreboard({ rounds }: MatchPlayLiveScorecardProps) {
       {matchPlayRounds.map(round => (
         <div key={round.id}>
           <div className="mb-3">
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 mb-0.5">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 mb-0.5">
               R{round.roundNumber}: {round.course.name}
             </h3>
-            <p className="text-[10px] sm:text-xs text-slate-600">{round.date}</p>
+            <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400">{round.date}</p>
           </div>
           <MatchRoundScorecard roundId={round.id} />
         </div>

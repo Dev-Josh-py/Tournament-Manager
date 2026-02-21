@@ -392,9 +392,9 @@ export default function Scoring() {
     const diff = score - par;
     if (diff <= -2) return "text-amber-500";
     if (diff === -1) return "text-red-500";
-    if (diff === 0) return "text-slate-900";
+    if (diff === 0) return "text-slate-900 dark:text-slate-100";
     if (diff === 1) return "text-blue-600";
-    return "text-slate-500";
+    return "text-slate-500 dark:text-slate-400";
   };
 
   const HoleButton = ({
@@ -436,7 +436,7 @@ export default function Scoring() {
           {/* STEP 1: SELECT ROUND */}
           {currentStep === 'selectRound' && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-bold">Select Round</h2>
+              <h2 className="text-2xl font-bold dark:text-slate-100">Select Round</h2>
               <div className="grid grid-cols-1 gap-3">
                 {rounds?.map(round => (
                   <Card
@@ -456,7 +456,7 @@ export default function Scoring() {
                           </Badge>
                         </div>
                         {round.isCompleted ? (
-                          <Badge className="bg-slate-200 text-slate-600 hover:bg-slate-300">Completed</Badge>
+                          <Badge className="bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600">Completed</Badge>
                         ) : (
                           <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">Upcoming</Badge>
                         )}
@@ -469,7 +469,7 @@ export default function Scoring() {
                         <span>{format(new Date(round.date), "EEEE MMM d, yyyy (a)")}</span>
                       </div>
                       {round.description && (
-                        <div className="text-sm text-slate-600">{round.description}</div>
+                        <div className="text-sm text-slate-600 dark:text-slate-400">{round.description}</div>
                       )}
                     </div>
                   </Card>
@@ -489,7 +489,7 @@ export default function Scoring() {
                       <ChevronLeft className="w-4 h-4 mr-1" />
                       Back
                     </Button>
-                    <h2 className="text-2xl font-bold">Loading...</h2>
+                    <h2 className="text-2xl font-bold dark:text-slate-100">Loading...</h2>
                   </div>
                   <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
                     <CardContent className="p-3">
@@ -515,7 +515,7 @@ export default function Scoring() {
                     <ChevronLeft className="w-4 h-4 mr-1" />
                     Back
                   </Button>
-                  <h2 className="text-2xl font-bold">{isMatchPlayMode ? 'Select Match' : isGroupMode ? 'Select Group' : 'Select Player'}</h2>
+                  <h2 className="text-2xl font-bold dark:text-slate-100">{isMatchPlayMode ? 'Select Match' : isGroupMode ? 'Select Group' : 'Select Player'}</h2>
                 </div>
 
                 {/* Show selected round info */}
@@ -558,8 +558,8 @@ export default function Scoring() {
                                   style={{ backgroundColor: p1?.team?.color || "#999" }}
                                 />
                                 <div>
-                                  <div className="font-semibold">{p1?.name}</div>
-                                  <div className="text-xs text-slate-500">HCP {p1?.handicap}</div>
+                                  <div className="font-semibold dark:text-slate-100">{p1?.name}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">HCP {p1?.handicap}</div>
                                 </div>
                               </div>
                               <div className="text-muted-foreground font-bold">vs</div>
@@ -569,8 +569,8 @@ export default function Scoring() {
                                   style={{ backgroundColor: p2?.team?.color || "#999" }}
                                 />
                                 <div>
-                                  <div className="font-semibold">{p2?.name}</div>
-                                  <div className="text-xs text-slate-500">HCP {p2?.handicap}</div>
+                                  <div className="font-semibold dark:text-slate-100">{p2?.name}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">HCP {p2?.handicap}</div>
                                 </div>
                               </div>
                             </div>
@@ -606,14 +606,14 @@ export default function Scoring() {
                               <Badge variant="secondary">{groupPlayers.length} player{groupPlayers.length !== 1 ? 's' : ''}</Badge>
                             </div>
                             {grouping.groupName && (
-                              <div className="text-lg font-display font-bold">
+                              <div className="text-lg font-display font-bold dark:text-slate-100">
                                 {grouping.groupName}
                               </div>
                             )}
                             <div className="flex flex-wrap gap-2">
                               {groupPlayers.map(player => (
                                 player && (
-                                  <div key={player.id} className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded text-sm">
+                                  <div key={player.id} className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded text-sm dark:text-slate-200">
                                     <div
                                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                       style={{ backgroundColor: player.team?.color || "#999" }}
@@ -651,7 +651,7 @@ export default function Scoring() {
                                 style={{ backgroundColor: player.team?.color || "#999" }}
                               />
                               <div>
-                                <div className="text-lg font-display font-bold">{player.name}</div>
+                                <div className="text-lg font-display font-bold dark:text-slate-100">{player.name}</div>
                                 <div className="text-xs text-muted-foreground">Handicap {player.handicap}</div>
                               </div>
                             </div>
@@ -677,7 +677,7 @@ export default function Scoring() {
                 <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-900">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <AlertCircle className="w-5 h-5 text-red-600" />
+                      <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
                       <div className="font-bold text-red-900 dark:text-red-100">
                         Course Handicaps Not Set
                       </div>
@@ -743,21 +743,21 @@ export default function Scoring() {
                 )}
 
                 {/* Hole Navigator */}
-                <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setCurrentHole(Math.max(1, currentHole - 1))}
                     disabled={currentHole === 1}
                   >
-                    <ChevronLeft className="w-6 h-6 text-slate-400" />
+                    <ChevronLeft className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                   </Button>
 
                   <div className="text-center">
                     <h2 className="text-2xl font-bold font-display text-primary">Hole {currentHole}</h2>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
                       <span>Par {currentHoleData.par}</span>
-                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                      <span className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
                       <span>SI {currentHoleData.strokeIndex}</span>
                     </div>
                   </div>
@@ -768,12 +768,12 @@ export default function Scoring() {
                     onClick={() => setCurrentHole(Math.min(18, currentHole + 1))}
                     disabled={currentHole === 18}
                   >
-                    <ChevronRight className="w-6 h-6 text-slate-400" />
+                    <ChevronRight className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                   </Button>
                 </div>
 
                 {/* Hole Selector Grid */}
-                <Card className="border-none shadow-sm bg-white">
+                <Card className="border-none shadow-sm bg-white dark:bg-slate-800">
                   <CardContent className="p-3">
                     <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
                       Quick Jump to Hole
@@ -802,7 +802,7 @@ export default function Scoring() {
                 </Card>
 
                 {/* Score Input */}
-                <Card className="border-none shadow-lg bg-white overflow-hidden relative">
+                <Card className="border-none shadow-lg bg-white dark:bg-slate-800 overflow-hidden relative">
                   <CardContent className="p-8 flex flex-col items-center justify-center gap-6">
 
                     <div className="flex flex-col items-center">
@@ -831,10 +831,10 @@ export default function Scoring() {
                     </div>
 
                     {roundDetails?.formatType === "pick_9" && (
-                      <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-lg w-full justify-between">
+                      <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 px-4 py-2 rounded-lg w-full justify-between">
                         <div className="flex items-center gap-2">
                           <Hash className="w-4 h-4 text-purple-600" />
-                          <span className="text-sm font-medium">Include in Pick 9?</span>
+                          <span className="text-sm font-medium dark:text-slate-200">Include in Pick 9?</span>
                         </div>
                         <Switch checked={isPick9} onCheckedChange={setIsPick9} />
                       </div>
@@ -851,7 +851,7 @@ export default function Scoring() {
                               onClick={() => setFir(fir === true ? null : true)}
                               className={clsx(
                                 "flex-1 min-h-[44px] rounded-lg text-lg font-bold transition",
-                                fir === true ? "bg-blue-600 text-white" : "bg-white border border-slate-200 text-slate-400"
+                                fir === true ? "bg-blue-600 text-white" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500"
                               )}
                             >
                               &#10003;
@@ -860,7 +860,7 @@ export default function Scoring() {
                               onClick={() => setFir(fir === false ? null : false)}
                               className={clsx(
                                 "flex-1 min-h-[44px] rounded-lg text-lg font-bold transition",
-                                fir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-400"
+                                fir === false ? "bg-red-500 text-white" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500"
                               )}
                             >
                               &#10007;
@@ -877,7 +877,7 @@ export default function Scoring() {
                             onClick={() => setGir(gir === true ? null : true)}
                             className={clsx(
                               "flex-1 min-h-[44px] rounded-lg text-lg font-bold transition",
-                              gir === true ? "bg-emerald-600 text-white" : "bg-white border border-slate-200 text-slate-400"
+                              gir === true ? "bg-emerald-600 text-white" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500"
                             )}
                           >
                             &#10003;
@@ -886,7 +886,7 @@ export default function Scoring() {
                             onClick={() => setGir(gir === false ? null : false)}
                             className={clsx(
                               "flex-1 min-h-[44px] rounded-lg text-lg font-bold transition",
-                              gir === false ? "bg-red-500 text-white" : "bg-white border border-slate-200 text-slate-400"
+                              gir === false ? "bg-red-500 text-white" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500"
                             )}
                           >
                             &#10007;
@@ -904,7 +904,7 @@ export default function Scoring() {
                               onClick={() => setPutts(putts === n ? null : n)}
                               className={clsx(
                                 "flex-1 min-h-[44px] rounded-lg text-base font-bold transition",
-                                putts === n ? "bg-slate-700 text-white" : "bg-white border border-slate-200 text-slate-600"
+                                putts === n ? "bg-slate-700 text-white" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                               )}
                             >
                               {n}
@@ -914,7 +914,7 @@ export default function Scoring() {
                             onClick={() => setPutts(putts !== null && putts >= 4 ? putts + 1 : 4)}
                             className={clsx(
                               "flex-1 min-h-[44px] rounded-lg text-base font-bold transition",
-                              putts !== null && putts >= 4 ? "bg-slate-700 text-white" : "bg-white border border-slate-200 text-slate-600"
+                              putts !== null && putts >= 4 ? "bg-slate-700 text-white" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                             )}
                           >
                             {putts !== null && putts > 4 ? putts : '4+'}
@@ -924,7 +924,7 @@ export default function Scoring() {
                     </div>
 
                     {existingScore && (
-                      <div className="absolute top-3 right-3 flex items-center gap-1 text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold uppercase tracking-wide">
+                      <div className="absolute top-3 right-3 flex items-center gap-1 text-[10px] bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full font-bold uppercase tracking-wide">
                         <CheckCircle className="w-3 h-3" /> Saved: {existingScore.grossScore}
                       </div>
                     )}
@@ -982,7 +982,7 @@ export default function Scoring() {
                 </Card>
 
                 {/* Hole Selector Grid */}
-                <Card className="border-none shadow-sm bg-white">
+                <Card className="border-none shadow-sm bg-white dark:bg-slate-800">
                   <CardContent className="p-3">
                     <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
                       Quick Jump to Hole
@@ -1021,7 +1021,7 @@ export default function Scoring() {
                 </Card>
 
                 {/* Hole Navigator */}
-                <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1030,14 +1030,14 @@ export default function Scoring() {
                     }}
                     disabled={currentHole === 1}
                   >
-                    <ChevronLeft className="w-6 h-6 text-slate-400" />
+                    <ChevronLeft className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                   </Button>
 
                   <div className="text-center">
                     <h2 className="text-2xl font-bold font-display text-primary">Hole {currentHole}</h2>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
                       <span>Par {currentHoleData.par}</span>
-                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                      <span className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
                       <span>SI {currentHoleData.strokeIndex}</span>
                     </div>
                   </div>
@@ -1050,12 +1050,12 @@ export default function Scoring() {
                     }}
                     disabled={currentHole === 18}
                   >
-                    <ChevronRight className="w-6 h-6 text-slate-400" />
+                    <ChevronRight className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                   </Button>
                 </div>
 
                 {/* Compact Player Scoring List */}
-                <Card className="border-none shadow-sm bg-white overflow-hidden">
+                <Card className="border-none shadow-sm bg-white dark:bg-slate-800 overflow-hidden">
                   <CardContent className="p-0">
                     <div className="divide-y">
                       {playersInGroup.map(player => {
@@ -1090,7 +1090,7 @@ export default function Scoring() {
                         };
 
                         return (
-                          <div key={player.id} className="p-3 hover:bg-slate-50 transition">
+                          <div key={player.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                             <div className="flex items-center justify-between gap-3">
                               {/* Player Info */}
                               <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -1105,12 +1105,12 @@ export default function Scoring() {
                                       <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
                                     )}
                                   </div>
-                                  <div className="text-xs text-slate-500 truncate">HCP {player.handicap}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">HCP {player.handicap}</div>
                                 </div>
                               </div>
 
                               {/* Score Controls */}
-                              <div className="flex-shrink-0 bg-slate-50 border border-slate-200 rounded-lg">
+                              <div className="flex-shrink-0 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -1151,11 +1151,11 @@ export default function Scoring() {
                                   <span className="text-[10px] text-blue-600 font-medium">F</span>
                                   <button
                                     onClick={() => updateGroupStat('fir', playerFir === true ? null : true)}
-                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400")}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500")}
                                   >&#10003;</button>
                                   <button
                                     onClick={() => updateGroupStat('fir', playerFir === false ? null : false)}
-                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500")}
                                   >&#10007;</button>
                                 </div>
                               )}
@@ -1163,25 +1163,25 @@ export default function Scoring() {
                                 <span className="text-[10px] text-emerald-600 font-medium">G</span>
                                 <button
                                   onClick={() => updateGroupStat('gir', playerGir === true ? null : true)}
-                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500")}
                                 >&#10003;</button>
                                 <button
                                   onClick={() => updateGroupStat('gir', playerGir === false ? null : false)}
-                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500")}
                                 >&#10007;</button>
                               </div>
                               <div className="flex items-center gap-0.5">
-                                <span className="text-[10px] text-slate-500 font-medium mr-0.5">P</span>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mr-0.5">P</span>
                                 {[0, 1, 2, 3].map(n => (
                                   <button
                                     key={n}
                                     onClick={() => updateGroupStat('putts', playerPutts === n ? null : n)}
-                                    className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                    className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400")}
                                   >{n}</button>
                                 ))}
                                 <button
                                   onClick={() => updateGroupStat('putts', playerPutts !== null && playerPutts >= 4 ? playerPutts + 1 : 4)}
-                                  className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                  className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400")}
                                 >{playerPutts !== null && playerPutts > 4 ? playerPutts : '4+'}</button>
                               </div>
                             </div>
@@ -1261,7 +1261,7 @@ export default function Scoring() {
                 </Card>
 
                 {/* Hole Selector Grid */}
-                <Card className="border-none shadow-sm bg-white">
+                <Card className="border-none shadow-sm bg-white dark:bg-slate-800">
                   <CardContent className="p-3">
                     <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
                       Quick Jump to Hole
@@ -1300,21 +1300,21 @@ export default function Scoring() {
                 </Card>
 
                 {/* Hole Navigator */}
-                <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setCurrentHole(Math.max(1, currentHole - 1))}
                     disabled={currentHole === 1}
                   >
-                    <ChevronLeft className="w-6 h-6 text-slate-400" />
+                    <ChevronLeft className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                   </Button>
 
                   <div className="text-center">
                     <h2 className="text-2xl font-bold font-display text-primary">Hole {currentHole}</h2>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
                       <span>Par {currentHoleData.par}</span>
-                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                      <span className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
                       <span>SI {currentHoleData.strokeIndex}</span>
                     </div>
                   </div>
@@ -1325,12 +1325,12 @@ export default function Scoring() {
                     onClick={() => setCurrentHole(Math.min(18, currentHole + 1))}
                     disabled={currentHole === 18}
                   >
-                    <ChevronRight className="w-6 h-6 text-slate-400" />
+                    <ChevronRight className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                   </Button>
                 </div>
 
                 {/* Match Play Scoring - Split Screen */}
-                <Card className="border-none shadow-sm bg-white overflow-hidden">
+                <Card className="border-none shadow-sm bg-white dark:bg-slate-800 overflow-hidden">
                   <CardContent className="p-0">
                     <div className="divide-x">
                       {playersInMatch.map((player, idx) => {
@@ -1381,13 +1381,13 @@ export default function Scoring() {
                                     <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
                                   )}
                                 </div>
-                                <div className="text-xs text-slate-500">HCP {player.handicap}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">HCP {player.handicap}</div>
                               </div>
                             </div>
 
                             {/* Score Controls */}
                             <div className="flex items-center justify-center">
-                              <div className="bg-slate-50 border border-slate-200 rounded-lg">
+                              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -1430,11 +1430,11 @@ export default function Scoring() {
                                   <span className="text-[10px] text-blue-600 font-medium">F</span>
                                   <button
                                     onClick={() => updateMatchStat('fir', playerFir === true ? null : true)}
-                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400")}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === true ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500")}
                                   >&#10003;</button>
                                   <button
                                     onClick={() => updateMatchStat('fir', playerFir === false ? null : false)}
-                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                    className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerFir === false ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500")}
                                   >&#10007;</button>
                                 </div>
                               )}
@@ -1442,25 +1442,25 @@ export default function Scoring() {
                                 <span className="text-[10px] text-emerald-600 font-medium">G</span>
                                 <button
                                   onClick={() => updateMatchStat('gir', playerGir === true ? null : true)}
-                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400")}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === true ? "bg-emerald-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500")}
                                 >&#10003;</button>
                                 <button
                                   onClick={() => updateMatchStat('gir', playerGir === false ? null : false)}
-                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}
+                                  className={clsx("w-7 h-7 rounded text-xs font-bold transition", playerGir === false ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500")}
                                 >&#10007;</button>
                               </div>
                               <div className="flex items-center gap-0.5">
-                                <span className="text-[10px] text-slate-500 font-medium mr-0.5">P</span>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mr-0.5">P</span>
                                 {[0, 1, 2, 3].map(n => (
                                   <button
                                     key={n}
                                     onClick={() => updateMatchStat('putts', playerPutts === n ? null : n)}
-                                    className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                    className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts === n ? "bg-slate-700 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400")}
                                   >{n}</button>
                                 ))}
                                 <button
                                   onClick={() => updateMatchStat('putts', playerPutts !== null && playerPutts >= 4 ? playerPutts + 1 : 4)}
-                                  className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500")}
+                                  className={clsx("w-6 h-7 rounded text-xs font-bold transition", playerPutts !== null && playerPutts >= 4 ? "bg-slate-700 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400")}
                                 >{playerPutts !== null && playerPutts > 4 ? playerPutts : '4+'}</button>
                               </div>
                             </div>
@@ -1519,7 +1519,7 @@ export default function Scoring() {
 
           {currentStep === 'selectRound' && !selectedRoundId && (
             <div className="text-center py-20 text-muted-foreground opacity-50 relative z-0">
-              <div className="bg-slate-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-slate-100 dark:bg-slate-700 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ClipboardEdit className="w-8 h-8" />
               </div>
               <p>Select a round to begin scoring</p>

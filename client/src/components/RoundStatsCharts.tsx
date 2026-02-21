@@ -10,6 +10,7 @@ import {
   Label,
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTheme } from "@/lib/theme";
 
 interface Score {
   holeNumber: number;
@@ -32,12 +33,19 @@ interface RoundStatsChartsProps {
   holes: Hole[];
 }
 
-const DIST_COLORS = {
+const DIST_COLORS_LIGHT = {
   eagle:  "#f59e0b",
   birdie: "#ef4444",
   par:    "#9ca3af",
   bogey:  "#93c5fd",
   double: "#1e40af",
+};
+const DIST_COLORS_DARK = {
+  eagle:  "#fbbf24",
+  birdie: "#f87171",
+  par:    "#9ca3af",
+  bogey:  "#60a5fa",
+  double: "#3b82f6",
 };
 
 // Colored % label rendered above each bar inside the SVG
@@ -57,19 +65,20 @@ function PctLabel({ x, y, width, index, data }: any) {
 }
 
 // Colored category tick on X axis
-function ScoreTick({ x, y, payload }: any) {
+function ScoreTick({ x, y, payload, distColors }: any) {
+  const dc = distColors || DIST_COLORS_LIGHT;
   const colors: Record<string, string> = {
-    EAGLE:   DIST_COLORS.eagle,
-    BIRDIE:  DIST_COLORS.birdie,
-    PAR:     DIST_COLORS.par,
-    BOGEY:   DIST_COLORS.bogey,
-    "D.BOG": DIST_COLORS.double,
+    EAGLE:   dc.eagle,
+    BIRDIE:  dc.birdie,
+    PAR:     dc.par,
+    BOGEY:   dc.bogey,
+    "D.BOG": dc.double,
   };
   return (
     <g transform={`translate(${x},${y + 4})`}>
       <text
         textAnchor="middle"
-        style={{ fontSize: 8, fontWeight: 700, fill: colors[payload.value] || "#64748b" }}
+        style={{ fontSize: 8, fontWeight: 700, fill: colors[payload.value] || "#94a3b8" }}
       >
         {payload.value}
       </text>
@@ -79,15 +88,15 @@ function ScoreTick({ x, y, payload }: any) {
 
 // Compact donut — fixed 100×100 px chart so it never overflows on mobile
 function DonutStat({
-  hit, miss, label, color,
-}: { hit: number; miss: number; label: string; color: string }) {
+  hit, miss, label, color, emptyColor,
+}: { hit: number; miss: number; label: string; color: string; emptyColor: string }) {
   const total = hit + miss;
   const pct   = total > 0 ? Math.round((hit / total) * 100) : 0;
   const data  = [{ value: hit }, { value: Math.max(miss, 0) }];
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</p>
 
       {/* Fixed 100×100 chart. margin=0 means cx=50,cy=50 == exact SVG+ring centre. */}
       <div style={{ width: 100, height: 100 }}>
@@ -104,7 +113,7 @@ function DonutStat({
             strokeWidth={0}
           >
             <Cell fill={color} />
-            <Cell fill="#e2e8f0" />
+            <Cell fill={emptyColor} />
             {/* Hardcode x/y to the known ring centre (50,50).
                 dy="0.35em" replaces dominantBaseline for Safari/iOS compat. */}
             <Label
@@ -123,11 +132,11 @@ function DonutStat({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-[9px] font-semibold text-slate-600">HIT {hit}</span>
+          <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-400">HIT {hit}</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-slate-200" />
-          <span className="text-[9px] font-semibold text-slate-500">MISS {miss}</span>
+          <div className="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-600" />
+          <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400">MISS {miss}</span>
         </div>
       </div>
     </div>
@@ -136,6 +145,10 @@ function DonutStat({
 
 
 export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const DIST_COLORS = isDark ? DIST_COLORS_DARK : DIST_COLORS_LIGHT;
+
   if (scores.length === 0 || holes.length === 0) return null;
 
   // ── Score distribution ────────────────────────────────────────────
@@ -212,9 +225,9 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
     <div className="space-y-3 mt-4">
 
       {/* ── Score Distribution ──────────────────────────────────── */}
-      <Card className="border-0 shadow-sm bg-white">
+      <Card className="border-0 shadow-sm bg-white dark:bg-slate-800">
         <CardContent className="p-4">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
             Score Distribution
           </p>
 
@@ -228,14 +241,14 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
               >
                 <XAxis
                   dataKey="name"
-                  tick={<ScoreTick />}
+                  tick={<ScoreTick distColors={DIST_COLORS} />}
                   axisLine={false}
                   tickLine={false}
                   interval={0}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={46} minPointSize={0}>
                   {scoreDistData.map((entry, idx) => (
-                    <Cell key={idx} fill={entry.count > 0 ? entry.color : "#f1f5f9"} />
+                    <Cell key={idx} fill={entry.count > 0 ? entry.color : (isDark ? "#1e293b" : "#f1f5f9")} />
                   ))}
                   {/* % label above each bar, colored to match */}
                   <LabelList content={<PctLabel data={scoreDistData} />} />
@@ -248,7 +261,7 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
           <div className="grid grid-cols-5 mt-1">
             {scoreDistData.map(d => (
               <div key={d.name} className="text-center">
-                <span className="text-[10px] font-bold text-slate-500">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
                   {d.count > 0 ? d.count : "—"}
                 </span>
               </div>
@@ -259,9 +272,9 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
 
       {/* ── Avg Score vs Par ────────────────────────────────────── */}
       {parTypeStats.length > 0 && (
-        <Card className="border-0 shadow-sm bg-white">
+        <Card className="border-0 shadow-sm bg-white dark:bg-slate-800">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
               Avg Score vs Par
             </p>
 
@@ -273,26 +286,22 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
                   const sign     = d.avgToPar >= 0 ? "+" : "";
                   const barPct   = Math.round((Math.abs(d.avgToPar) / maxVal) * 100);
                   // Color: under par=green, 0-1=amber, 1-2=light blue, 2+=dark blue
-                  const barColor =
-                    d.avgToPar < 0   ? "#22c55e" :
-                    d.avgToPar < 1   ? "#f59e0b" :
-                    d.avgToPar < 2   ? "#93c5fd" :
-                                       "#1e40af";
-                  const textColor =
-                    d.avgToPar < 0   ? "#16a34a" :
-                    d.avgToPar < 1   ? "#d97706" :
-                    d.avgToPar < 2   ? "#3b82f6" :
-                                       "#1e40af";
+                  const barColor = isDark
+                    ? (d.avgToPar < 0 ? "#4ade80" : d.avgToPar < 1 ? "#fbbf24" : d.avgToPar < 2 ? "#60a5fa" : "#3b82f6")
+                    : (d.avgToPar < 0 ? "#22c55e" : d.avgToPar < 1 ? "#f59e0b" : d.avgToPar < 2 ? "#93c5fd" : "#1e40af");
+                  const textColor = isDark
+                    ? (d.avgToPar < 0 ? "#4ade80" : d.avgToPar < 1 ? "#fbbf24" : d.avgToPar < 2 ? "#60a5fa" : "#3b82f6")
+                    : (d.avgToPar < 0 ? "#16a34a" : d.avgToPar < 1 ? "#d97706" : d.avgToPar < 2 ? "#3b82f6" : "#1e40af");
 
                   return (
                     <div key={d.par} className="flex items-center gap-3">
                       {/* Label */}
-                      <span className="text-xs font-bold text-slate-600 w-11 flex-shrink-0">
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400 w-11 flex-shrink-0">
                         Par {d.par}
                       </span>
 
                       {/* Bar track */}
-                      <div className="flex-1 bg-slate-100 rounded-full h-3.5 overflow-hidden">
+                      <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-3.5 overflow-hidden">
                         <div
                           className="h-full rounded-full"
                           style={{
@@ -316,7 +325,7 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
             </div>
 
             {/* Hole counts */}
-            <p className="text-[9px] text-slate-400 mt-3 text-center">
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-3 text-center">
               {parTypeStats.map(d => `Par ${d.par}: ${d.count} hole${d.count !== 1 ? "s" : ""}`).join(" · ")}
             </p>
           </CardContent>
@@ -325,9 +334,9 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
 
       {/* ── FIR + GIR — single compact card ────────────────────── */}
       {hasFirGir && (
-        <Card className="border-0 shadow-sm bg-white">
+        <Card className="border-0 shadow-sm bg-white dark:bg-slate-800">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
               Fairways &amp; Greens
             </p>
             <div className={
@@ -340,7 +349,8 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
                   hit={firHits}
                   miss={firTracked - firHits}
                   label="Fairways (FIR)"
-                  color="#3b82f6"
+                  color={isDark ? "#60a5fa" : "#3b82f6"}
+                  emptyColor={isDark ? "#334155" : "#e2e8f0"}
                 />
               )}
               {girTracked > 0 && (
@@ -348,7 +358,8 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
                   hit={girHits}
                   miss={girTracked - girHits}
                   label="Greens (GIR)"
-                  color="#22c55e"
+                  color={isDark ? "#4ade80" : "#22c55e"}
+                  emptyColor={isDark ? "#334155" : "#e2e8f0"}
                 />
               )}
             </div>
@@ -358,15 +369,15 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
 
       {/* ── Putting ─────────────────────────────────────────────── */}
       {hasPutts && avgPutts !== null && (
-        <Card className="border-0 shadow-sm bg-white">
+        <Card className="border-0 shadow-sm bg-white dark:bg-slate-800">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Putting
               </p>
               <div className="text-right">
-                <span className="text-2xl font-bold text-slate-800">{avgPutts.toFixed(1)}</span>
-                <span className="text-[10px] text-slate-500 ml-1">avg putts/hole</span>
+                <span className="text-2xl font-bold text-slate-800 dark:text-slate-200">{avgPutts.toFixed(1)}</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-1">avg putts/hole</span>
               </div>
             </div>
 
@@ -378,17 +389,15 @@ export function RoundStatsCharts({ scores, holes }: RoundStatsChartsProps) {
                   return avgPuttsByPar.map(d => {
                     const barPct   = Math.round((d.avg / maxAvg) * 100);
                     // Color: <1.5=green, 1.5-2=slate, 2-2.5=amber, >2.5=red
-                    const barColor =
-                      d.avg < 1.5 ? "#22c55e" :
-                      d.avg < 2.0 ? "#64748b" :
-                      d.avg < 2.5 ? "#f59e0b" :
-                                    "#ef4444";
+                    const barColor = isDark
+                      ? (d.avg < 1.5 ? "#4ade80" : d.avg < 2.0 ? "#94a3b8" : d.avg < 2.5 ? "#fbbf24" : "#f87171")
+                      : (d.avg < 1.5 ? "#22c55e" : d.avg < 2.0 ? "#64748b" : d.avg < 2.5 ? "#f59e0b" : "#ef4444");
                     return (
                       <div key={d.par} className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-slate-600 w-11 flex-shrink-0">
+                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400 w-11 flex-shrink-0">
                           Par {d.par}
                         </span>
-                        <div className="flex-1 bg-slate-100 rounded-full h-3.5 overflow-hidden">
+                        <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-3.5 overflow-hidden">
                           <div
                             className="h-full rounded-full"
                             style={{ width: `${Math.max(barPct, 6)}%`, backgroundColor: barColor }}
