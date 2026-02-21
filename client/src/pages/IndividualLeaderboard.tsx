@@ -44,6 +44,7 @@ interface PlayerRoundScore {
   teamName: string;
   teamColor: string;
   netScore: number;
+  grossScore: number;
   par: number;
   toPar: number;
   handicap: number;
@@ -271,7 +272,10 @@ export default function IndividualLeaderboard() {
 
               {/* Scores */}
               <div className="text-right">
-                <div className="text-xl font-bold">{player.netScore}</div>
+                <div className="text-xl font-bold">
+                  {player.netScore}
+                  <span className="text-xs font-normal text-muted-foreground ml-1">({player.grossScore})</span>
+                </div>
                 <div className={clsx("text-sm font-semibold", getToParColor(player.toPar))}>
                   {player.toPar > 0 ? '+' : ''}{player.toPar}
                 </div>
@@ -328,6 +332,7 @@ export default function IndividualLeaderboard() {
         if (playerRoundScores.length === 0) return;
 
         const netScore = playerRoundScores.reduce((sum, s) => sum + (s.netScore || 0), 0);
+        const grossScore = playerRoundScores.reduce((sum, s) => sum + (s.grossScore || 0), 0);
         const par = playerRoundScores.reduce((sum, s) => {
           const hole = round.holes?.find((h: any) => h.number === s.holeNumber);
           return sum + (hole?.par || 0);
@@ -339,6 +344,7 @@ export default function IndividualLeaderboard() {
           teamName: player.team?.name || "N/A",
           teamColor: player.team?.color || "#888",
           netScore,
+          grossScore,
           par,
           toPar: netScore - par,
           handicap: player.handicap,
@@ -643,7 +649,7 @@ function SGBarLabel({ x, y, width, height, index, data, isDark }: any) {
   const color = isPositive
     ? (isDark ? "#4ade80" : "#16a34a")
     : (isDark ? "#f87171" : "#ef4444");
-  const labelY = isPositive ? (y ?? 0) - 5 : (y ?? 0) + (height ?? 0) + 12;
+  const labelY = (y ?? 0) - 5;
   return (
     <text
       x={(x ?? 0) + (width ?? 0) / 2}

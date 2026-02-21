@@ -604,6 +604,9 @@ export class DatabaseStorage implements IStorage {
       let player1HolesWon = 0;
       let player2HolesWon = 0;
       let holesHalved = 0;
+      let matchDecidedHole = -1;
+      let decidingMatchStatus = 0;
+      let decidingHolesRemaining = 0;
 
       for (let hole = 1; hole <= 18; hole++) {
         const player1Score = scores.find(s => s.playerId === pairing.player1Id && s.holeNumber === hole);
@@ -621,7 +624,27 @@ export class DatabaseStorage implements IStorage {
         } else {
           holesHalved++;
         }
+
+        // Check if match is now decided
+        const currentMatchStatus = player1HolesWon - player2HolesWon;
+        const currentHolesRemaining = 18 - (player1HolesWon + player2HolesWon + holesHalved);
+        if (matchDecidedHole === -1 && (
+          currentMatchStatus > currentHolesRemaining ||
+          -currentMatchStatus > currentHolesRemaining
+        )) {
+          matchDecidedHole = hole;
+          decidingMatchStatus = currentMatchStatus;
+          decidingHolesRemaining = currentHolesRemaining;
+        }
       }
+
+      // Build match result string (e.g., "6 & 4" or "1 up")
+      const finalStatus = matchDecidedHole !== -1 ? decidingMatchStatus : (player1HolesWon - player2HolesWon);
+      const finalRemaining = matchDecidedHole !== -1 ? decidingHolesRemaining : 0;
+      const absStatus = Math.abs(finalStatus);
+      const matchResult = finalStatus !== 0
+        ? (finalRemaining > 0 ? `${absStatus} & ${finalRemaining}` : `${absStatus} up`)
+        : "";
 
       // Determine match winner and award team points
       let p1Earned = 0;
@@ -631,14 +654,14 @@ export class DatabaseStorage implements IStorage {
 
       if (player1HolesWon > player2HolesWon) {
         p1Earned = 8; p2Earned = 3;
-        p1Desc = `Won vs ${player2Name}`;
-        p2Desc = `Lost vs ${player1Name}`;
+        p1Desc = `Won vs ${player2Name}${matchResult ? ` (${matchResult})` : ""}`;
+        p2Desc = `Lost vs ${player1Name}${matchResult ? ` (${matchResult})` : ""}`;
         teamPoints.set(player1Team, (teamPoints.get(player1Team) || 0) + 8);
         teamPoints.set(player2Team, (teamPoints.get(player2Team) || 0) + 3);
       } else if (player2HolesWon > player1HolesWon) {
         p1Earned = 3; p2Earned = 8;
-        p1Desc = `Lost vs ${player2Name}`;
-        p2Desc = `Won vs ${player1Name}`;
+        p1Desc = `Lost vs ${player2Name}${matchResult ? ` (${matchResult})` : ""}`;
+        p2Desc = `Won vs ${player1Name}${matchResult ? ` (${matchResult})` : ""}`;
         teamPoints.set(player1Team, (teamPoints.get(player1Team) || 0) + 3);
         teamPoints.set(player2Team, (teamPoints.get(player2Team) || 0) + 8);
       } else {
