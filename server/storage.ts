@@ -223,6 +223,9 @@ export class DatabaseStorage implements IStorage {
     const round = await this.getRound(roundId);
     if (!round) return;
 
+    // Skip recalculation for team scramble rounds
+    if (round.formatType === 'team_scramble') return;
+
     // Get all scores for these players in this round
     const roundScores = await db
       .select()
@@ -279,6 +282,9 @@ export class DatabaseStorage implements IStorage {
 
     // Process each round
     for (const round of allRounds) {
+      // Skip recalculation for team scramble rounds
+      if (round.formatType === 'team_scramble') continue;
+
       const roundWithHoles = await this.getRound(round.id);
       if (!roundWithHoles) continue;
 
@@ -342,6 +348,70 @@ export class DatabaseStorage implements IStorage {
     const player = await db.query.players.findFirst({ where: eq(players.id, data.playerId) });
     if (!player) throw new Error("Player not found");
 
+    const hole = (round as any).holes?.find((h: any) => h.number === data.holeNumber);
+    if (!hole) throw new Error("Hole not found");
+
+    // Team Scramble: store gross only, skip net/stableford, duplicate for teammate
+    if (round.formatType === 'team_scramble') {
+      const values: any = {
+        roundId: data.roundId,
+        playerId: data.playerId,
+        holeNumber: data.holeNumber,
+        grossScore: data.grossScore,
+        isPick9: false,
+        netScore: null,
+        stablefordPoints: null,
+        handicapUsed: null,
+        gir: null,
+        fir: null,
+        putts: null,
+      };
+
+      let result: Score;
+      if (existing.length > 0) {
+        const [updated] = await db.update(scores)
+          .set(values)
+          .where(eq(scores.id, existing[0].id))
+          .returning();
+        result = updated;
+      } else {
+        const [created] = await db.insert(scores).values(values).returning();
+        result = created;
+      }
+
+      // Duplicate score for teammate (same team, different player)
+      if (player.teamId) {
+        const teammate = await db.query.players.findFirst({
+          where: and(
+            eq(players.teamId, player.teamId),
+            sql`${players.id} != ${player.id}`
+          )
+        });
+
+        if (teammate) {
+          const teammateExisting = await db.select().from(scores).where(
+            and(
+              eq(scores.roundId, data.roundId),
+              eq(scores.playerId, teammate.id),
+              eq(scores.holeNumber, data.holeNumber)
+            )
+          );
+
+          const teammateValues = { ...values, playerId: teammate.id };
+
+          if (teammateExisting.length > 0) {
+            await db.update(scores)
+              .set(teammateValues)
+              .where(eq(scores.id, teammateExisting[0].id));
+          } else {
+            await db.insert(scores).values(teammateValues);
+          }
+        }
+      }
+
+      return result;
+    }
+
     // Get round-specific handicap
     const roundHandicapRecord = await db
       .select()
@@ -358,9 +428,6 @@ export class DatabaseStorage implements IStorage {
     const handicapToUse = roundHandicapRecord.length > 0 && roundHandicapRecord[0].courseHandicap !== null
       ? roundHandicapRecord[0].courseHandicap
       : 0;
-
-    const hole = (round as any).holes?.find((h: any) => h.number === data.holeNumber);
-    if (!hole) throw new Error("Hole not found");
 
     const { netScore, stablefordPoints } = this.calculatePoints(
       data.grossScore,
@@ -475,6 +542,9 @@ export class DatabaseStorage implements IStorage {
           break;
         case 'individual_stableford':
           results = this.calculateIndividualStableford(scoresWithData, allTeams);
+          break;
+        case 'team_scramble':
+          results = await this.calculateTeamScramble(scoresWithData, allTeams, round.id);
           break;
       }
 
@@ -1073,6 +1143,83 @@ export class DatabaseStorage implements IStorage {
       rank: 0,
       playerBreakdown: teamBreakdowns.get(t.id) || [],
     })).sort((a, b) => b.points - a.points).map((r, i) => ({ ...r, rank: i + 1 }));
+  }
+
+  private async calculateTeamScramble(scores: any[], teams: Team[], roundId: number): Promise<RoundLeaderboardEntry[]> {
+    // Team Scramble: 9-hole gross strokes per team with starting score adjustments
+    const assignments = await this.getPick9Assignments(roundId);
+
+    // Determine which 9 holes are played (all players get same range)
+    const holeRange = assignments.length > 0 ? assignments[0].holeRange : "1-9";
+    const startHole = holeRange === "1-9" ? 1 : 10;
+    const endHole = holeRange === "1-9" ? 9 : 18;
+
+    // Get hole data for par calculation
+    const round = await this.getRound(roundId);
+    const roundHoles = (round as any)?.holes || [];
+
+    // Starting score adjustments (lower is better, so negative helps)
+    const startingAdjustments: Record<string, number> = {
+      "Team Josh/Jethro": 0,
+      "Team Keagan/Matt": -1,
+      "Team Ross/Jaun": -4,
+    };
+
+    const teamResults = teams.map(team => {
+      const teamPlayers = scores.filter(s => s.player?.teamId === team.id);
+
+      // Sum gross scores for the 9 holes (scores are duplicated for both players, so just use one)
+      let grossTotal = 0;
+      let parTotal = 0;
+      let holesScored = 0;
+
+      // Get unique player IDs on this team
+      const playerIds = [...new Set(teamPlayers.map(s => s.playerId))];
+      const firstPlayerId = playerIds[0];
+
+      for (let hole = startHole; hole <= endHole; hole++) {
+        const holeScore = teamPlayers.find(s => s.playerId === firstPlayerId && s.holeNumber === hole);
+        if (holeScore && holeScore.grossScore) {
+          grossTotal += holeScore.grossScore;
+          holesScored++;
+        }
+        const holeData = roundHoles.find((h: any) => h.number === hole);
+        if (holeData) {
+          parTotal += holeData.par;
+        }
+      }
+
+      const startingAdj = startingAdjustments[team.name] ?? 0;
+      const adjustedScore = (grossTotal - parTotal) + startingAdj;
+
+      const breakdowns: PlayerBreakdown[] = [{
+        playerId: 0,
+        playerName: team.name,
+        teamId: team.id,
+        pointsEarned: 0,
+        metric: grossTotal,
+        metricLabel: `Gross ${grossTotal}, Starting ${startingAdj >= 0 ? '+' : ''}${startingAdj}`,
+        description: `${holesScored} holes played`,
+      }];
+
+      return { team, grossTotal, parTotal, startingAdj, adjustedScore, breakdowns, holesScored };
+    });
+
+    // Rank teams (lowest adjusted score wins)
+    const sorted = teamResults
+      .filter(r => r.holesScored > 0)
+      .sort((a, b) => a.adjustedScore - b.adjustedScore);
+
+    const pointsDist = [15, 11, 8];
+
+    return sorted.map((res, idx) => ({
+      teamId: res.team.id,
+      teamName: res.team.name,
+      points: pointsDist[idx] || 0,
+      scoreMetric: res.adjustedScore,
+      rank: idx + 1,
+      playerBreakdown: res.breakdowns,
+    }));
   }
 
   // === GROUPINGS ===

@@ -45,12 +45,12 @@ const rounds = [
   },
   {
     number: 5,
-    course: "Fancourt Links",
+    course: "Knysna Golf Club",
     date: "Mon 23 Feb (PM)",
-    format: "Individual Stableford",
-    tag: "individual",
-    description: "All 6 players ranked by total Stableford points. Each player earns placement points that go to their team total.",
-    points: "1st 10, 2nd 8, 3rd 6, 4th 5, 5th 3, 6th 2",
+    format: "Team Scramble (9 Holes)",
+    tag: "team",
+    description: "One gross score per team per hole over 9 holes. Starting score adjustments are applied per team. Lowest adjusted score wins.",
+    points: "1st 15 pts, 2nd 11 pts, 3rd 8 pts",
   },
   {
     number: 6,

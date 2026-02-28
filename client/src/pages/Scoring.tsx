@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "wouter";
-import { useRounds, useRound, usePlayers, useSubmitScore, useScores, useRoundHandicaps, useRoundGroupings, useMatchPairings } from "@/hooks/use-tournament";
+import { useRounds, useRound, usePlayers, useSubmitScore, useScores, useRoundHandicaps, useRoundGroupings, useMatchPairings, useTeams, usePick9Assignments } from "@/hooks/use-tournament";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/Navigation";
 import { PageTransition } from "@/components/PageTransition";
@@ -38,21 +38,43 @@ export default function Scoring() {
   const [selectedMatchNumber, setSelectedMatchNumber] = useState<number>(0);
   const [matchScores, setMatchScores] = useState<Record<number, Record<number, Record<number, { strokes: number; gir?: boolean | null; fir?: boolean | null; putts?: number | null }>>>>({});
 
+  // Scramble mode state
+  const [selectedTeamId, setSelectedTeamId] = useState<number>(0);
+  const [scrambleScores, setScrambleScores] = useState<Record<number, number>>({});
+
   const { data: rounds } = useRounds();
   const { data: players } = usePlayers();
+  const { data: teams } = useTeams();
   const { data: roundDetails } = useRound(Number(selectedRoundId));
   const { data: existingScores } = useScores(Number(selectedRoundId));
   const { data: roundHandicaps } = useRoundHandicaps(Number(selectedRoundId));
   const { data: groupings, isLoading: groupingsLoading } = useRoundGroupings(Number(selectedRoundId));
   const { data: matchPairings, isLoading: matchPairingsLoading } = useMatchPairings(Number(selectedRoundId));
+  const { data: pick9Assignments } = usePick9Assignments(Number(selectedRoundId));
 
   const submitScore = useSubmitScore();
   const { toast } = useToast();
 
   // Determine mode
   const selectedRound = rounds?.find(r => String(r.id) === selectedRoundId);
-  const isMatchPlayMode = selectedRound?.formatType === 'individual_match_play';
-  const isGroupMode = !isMatchPlayMode && (groupings && groupings.length > 0) ? true : false;
+  const isScrambleMode = selectedRound?.formatType === 'team_scramble';
+  const isMatchPlayMode = !isScrambleMode && selectedRound?.formatType === 'individual_match_play';
+  const isGroupMode = !isMatchPlayMode && !isScrambleMode && (groupings && groupings.length > 0) ? true : false;
+
+  // Scramble: determine which 9 holes are played
+  const scrambleHoleRange = useMemo(() => {
+    if (!isScrambleMode || !pick9Assignments || pick9Assignments.length === 0) return null;
+    return pick9Assignments[0].holeRange as "1-9" | "10-18";
+  }, [isScrambleMode, pick9Assignments]);
+
+  const scrambleStartHole = scrambleHoleRange === "10-18" ? 10 : 1;
+  const scrambleEndHole = scrambleHoleRange === "10-18" ? 18 : 9;
+
+  // Get first player of selected team (for submitting scores)
+  const scrambleSubmitPlayer = useMemo(() => {
+    if (!isScrambleMode || !selectedTeamId || !players) return null;
+    return players.find(p => p.team?.id === selectedTeamId) || null;
+  }, [isScrambleMode, selectedTeamId, players]);
 
   const currentGrouping = isGroupMode && selectedGroupNumber > 0
     ? groupings?.find(g => g.groupNumber === selectedGroupNumber)
@@ -379,6 +401,8 @@ export default function Scoring() {
     setSelectedGroupNumber(0);
     setSelectedPlayerId("");
     setSelectedMatchNumber(0);
+    setSelectedTeamId(0);
+    setScrambleScores({});
     setCurrentHole(1);
     setCurrentStep('selectRound');
   };
@@ -515,7 +539,7 @@ export default function Scoring() {
                     <ChevronLeft className="w-4 h-4 mr-1" />
                     Back
                   </Button>
-                  <h2 className="text-2xl font-bold dark:text-slate-100">{isMatchPlayMode ? 'Select Match' : isGroupMode ? 'Select Group' : 'Select Player'}</h2>
+                  <h2 className="text-2xl font-bold dark:text-slate-100">{isScrambleMode ? 'Select Team' : isMatchPlayMode ? 'Select Match' : isGroupMode ? 'Select Group' : 'Select Player'}</h2>
                 </div>
 
                 {/* Show selected round info */}
@@ -527,6 +551,62 @@ export default function Scoring() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Scramble mode: show team cards */}
+                {isScrambleMode && (
+                  <div className="grid grid-cols-1 gap-3">
+                    {!scrambleHoleRange && (
+                      <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-900">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3 mb-2">
+                            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                            <div className="font-bold text-red-900 dark:text-red-100">
+                              9-Hole Selection Not Set
+                            </div>
+                          </div>
+                          <p className="text-sm text-red-800 dark:text-red-200">
+                            Please select Front 9 or Back 9 in the Pick 9 Setup page before scoring.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {scrambleHoleRange && teams?.map(team => {
+                      const teamPlayers = players?.filter(p => p.team?.id === team.id) || [];
+                      return (
+                        <Card
+                          key={team.id}
+                          className="overflow-hidden border-border/50 shadow-md cursor-pointer hover:shadow-lg transition-all"
+                          onClick={() => {
+                            setSelectedTeamId(team.id);
+                            setCurrentHole(scrambleStartHole);
+                            setCurrentStep('scoring');
+                          }}
+                        >
+                          <div className="h-2 w-full" style={{ backgroundColor: team.color }} />
+                          <div className="p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3.5 h-3.5 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: team.color }}
+                                />
+                                <div className="text-lg font-display font-bold dark:text-slate-100">{team.name}</div>
+                              </div>
+                              <Badge variant="secondary">Team Scramble</Badge>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {teamPlayers.map(player => (
+                                <span key={player.id} className="text-sm text-slate-600 dark:text-slate-400">
+                                  {player.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Match play mode: show match cards */}
                 {isMatchPlayMode && (
@@ -631,7 +711,7 @@ export default function Scoring() {
                 )}
 
                 {/* Single player mode: show player cards */}
-                {!isGroupMode && (
+                {!isGroupMode && !isScrambleMode && (
                   <div className="grid grid-cols-1 gap-3">
                     {players?.map(player => (
                       <Card
@@ -668,8 +748,8 @@ export default function Scoring() {
             );
           })()}
 
-          {/* Handicap validation */}
-          {selectedRoundId && roundHandicaps && (() => {
+          {/* Handicap validation - skip for scramble rounds */}
+          {selectedRoundId && !isScrambleMode && roundHandicaps && (() => {
             const allHandicapsSet = roundHandicaps.every(h => h.courseHandicap !== null && h.courseHandicap !== undefined);
 
             if (!allHandicapsSet) {
@@ -1501,6 +1581,228 @@ export default function Scoring() {
                         Saving...
                       </>
                     ) : currentHole === 18 ? (
+                      <>
+                        Finish
+                        <CheckCircle2 className="w-5 h-5 ml-2" />
+                      </>
+                    ) : (
+                      <>
+                        Next Hole
+                        <ChevronRight className="w-5 h-5 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* STEP 3: INPUT SCORES - SCRAMBLE MODE */}
+          {currentStep === 'scoring' && selectedRoundId && isScrambleMode && selectedTeamId > 0 && scrambleHoleRange && (() => {
+            const selectedTeam = teams?.find(t => t.id === selectedTeamId);
+            const currentHoleData = roundDetails?.holes.find(h => h.number === currentHole);
+
+            // Track which holes have been scored
+            const scoredHolesScramble = new Set<number>();
+            if (existingScores && scrambleSubmitPlayer) {
+              existingScores
+                .filter(s => s.playerId === scrambleSubmitPlayer.id)
+                .forEach(s => scoredHolesScramble.add(s.holeNumber));
+            }
+
+            return (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+                {/* Back button */}
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={handleBackToGroupSelection}>
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Back
+                  </Button>
+                </div>
+
+                {/* Context card */}
+                <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                  <CardContent className="p-3">
+                    <div className="text-sm text-muted-foreground">
+                      Round {selectedRound?.roundNumber} - {selectedRound?.course.name}
+                    </div>
+                    <div className="font-semibold flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: selectedTeam?.color }}
+                      />
+                      {selectedTeam?.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {scrambleHoleRange === "1-9" ? "Front 9 (Holes 1-9)" : "Back 9 (Holes 10-18)"}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Hole Selector Grid - only 9 holes */}
+                <Card className="border-none shadow-sm bg-white dark:bg-slate-800">
+                  <CardContent className="p-3">
+                    <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
+                      Quick Jump to Hole
+                    </div>
+                    <div className="grid grid-cols-9 gap-1.5">
+                      {Array.from({ length: 9 }, (_, i) => i + scrambleStartHole).map(hole => (
+                        <HoleButton
+                          key={hole}
+                          holeNumber={hole}
+                          isActive={currentHole === hole}
+                          isScored={scoredHolesScramble.has(hole)}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Hole Navigator */}
+                {currentHoleData && (
+                  <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCurrentHole(Math.max(scrambleStartHole, currentHole - 1))}
+                      disabled={currentHole === scrambleStartHole}
+                    >
+                      <ChevronLeft className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+                    </Button>
+
+                    <div className="text-center">
+                      <h2 className="text-2xl font-bold font-display text-primary">Hole {currentHole}</h2>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
+                        <span>Par {currentHoleData.par}</span>
+                        <span className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
+                        <span>SI {currentHoleData.strokeIndex}</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCurrentHole(Math.min(scrambleEndHole, currentHole + 1))}
+                      disabled={currentHole === scrambleEndHole}
+                    >
+                      <ChevronRight className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Score Input - gross only, no stats */}
+                {currentHoleData && (() => {
+                  const existingHoleScore = existingScores?.find(
+                    s => s.playerId === scrambleSubmitPlayer?.id && s.holeNumber === currentHole
+                  );
+                  const currentScore = scrambleScores[currentHole] ?? existingHoleScore?.grossScore ?? 0;
+                  const scoreColor = currentScore > 0 ? getScoreColor(currentScore, currentHoleData.par) : "text-slate-400";
+
+                  return (
+                    <Card className="border-none shadow-lg bg-white dark:bg-slate-800 overflow-hidden relative">
+                      <CardContent className="p-8 flex flex-col items-center justify-center gap-6">
+                        <div className="flex flex-col items-center">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={currentScore || ""}
+                            style={{ WebkitTapHighlightColor: 'transparent' }}
+                            onFocus={(e) => {
+                              const el = e.target;
+                              el.setSelectionRange(el.value.length, el.value.length);
+                            }}
+                            onChange={(e) => {
+                              const v = parseInt(e.target.value);
+                              if (!isNaN(v) && v >= 1 && v <= 15) {
+                                setScrambleScores(prev => ({ ...prev, [currentHole]: v }));
+                              }
+                            }}
+                            className={clsx(
+                              "text-7xl font-bold font-display text-center w-32 bg-transparent border-none outline-none leading-none tracking-tighter caret-transparent",
+                              scoreColor
+                            )}
+                          />
+                          <span className="text-xs uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest mt-2 block">
+                            Team Strokes
+                          </span>
+                        </div>
+
+                        {existingHoleScore && (
+                          <div className="absolute top-3 right-3 flex items-center gap-1 text-[10px] bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full font-bold uppercase tracking-wide">
+                            <CheckCircle className="w-3 h-3" /> Saved: {existingHoleScore.grossScore}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
+                {/* Navigation Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setCurrentHole(Math.max(scrambleStartHole, currentHole - 1))}
+                    size="lg"
+                    className="flex-1 h-12 text-base font-bold shadow-md"
+                    variant="outline"
+                    disabled={currentHole === scrambleStartHole}
+                  >
+                    <ChevronLeft className="w-5 h-5 mr-2" />
+                    Prev Hole
+                  </Button>
+
+                  <Button
+                    onClick={async () => {
+                      if (!scrambleSubmitPlayer) return;
+                      const scoreToSave = scrambleScores[currentHole];
+                      if (scoreToSave) {
+                        try {
+                          await submitScore.mutateAsync({
+                            roundId: Number(selectedRoundId),
+                            playerId: scrambleSubmitPlayer.id,
+                            holeNumber: currentHole,
+                            grossScore: scoreToSave,
+                          });
+                          // Clear the unsaved score for this hole
+                          setScrambleScores(prev => {
+                            const { [currentHole]: _, ...rest } = prev;
+                            return rest;
+                          });
+                        } catch (error: any) {
+                          toast({
+                            title: "Error",
+                            description: error.message || "Failed to submit score",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                      }
+
+                      if (currentHole === scrambleEndHole) {
+                        toast({
+                          title: "Round Completed",
+                          description: "All scramble scores have been saved.",
+                          variant: "default",
+                        });
+                        setSelectedTeamId(0);
+                        setScrambleScores({});
+                        setCurrentHole(1);
+                        setCurrentStep('selectRound');
+                      } else {
+                        setCurrentHole(currentHole + 1);
+                      }
+                    }}
+                    size="lg"
+                    className="flex-1 h-12 text-base font-bold shadow-xl bg-gradient-to-r from-primary to-emerald-700 hover:to-emerald-800 transition-all active:scale-[0.98]"
+                    disabled={submitScore.isPending}
+                  >
+                    {submitScore.isPending ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Saving...
+                      </>
+                    ) : currentHole === scrambleEndHole ? (
                       <>
                         Finish
                         <CheckCircle2 className="w-5 h-5 ml-2" />

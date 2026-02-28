@@ -126,6 +126,9 @@ export default function IndividualLeaderboard() {
 
     // Aggregate scores from all rounds
     rounds.forEach((round, roundIndex) => {
+      // Skip scramble rounds — they have no individual net scores
+      if (round.formatType === 'team_scramble') return;
+
       const roundScores = allScoresData[roundIndex];
       if (!roundScores) return;
 
@@ -600,7 +603,23 @@ export default function IndividualLeaderboard() {
             <TabsContent value="rounds" className="space-y-8">
               {rounds && rounds.length > 0 ? (
                 rounds.map(round => (
-                  <RoundIndividualLeaderboard key={round.id} roundId={round.id} round={round} />
+                  round.formatType === 'team_scramble' ? (
+                    <div key={round.id} className="space-y-3">
+                      <div className="flex items-baseline justify-between px-1">
+                        <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                          Round {round.roundNumber}
+                        </h3>
+                        <span className="text-xs text-muted-foreground">{round.course.name}</span>
+                      </div>
+                      <Card className="bg-slate-50 dark:bg-slate-900 border-dashed shadow-none">
+                        <CardContent className="p-4 text-center text-muted-foreground text-sm">
+                          Team Scramble — No individual scores
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ) : (
+                    <RoundIndividualLeaderboard key={round.id} roundId={round.id} round={round} />
+                  )
                 ))
               ) : (
                 <div className="text-center py-16 text-muted-foreground">
@@ -733,7 +752,10 @@ function PlayerStatsTab({
       });
     });
 
-    allScoresData.forEach(roundScores => {
+    allScoresData.forEach((roundScores, roundIndex) => {
+      // Skip scramble rounds — stats are null
+      if (rounds && rounds[roundIndex]?.formatType === 'team_scramble') return;
+
       roundScores.forEach((score: Score) => {
         if (score.playerId == null) return;
         const entry = map.get(score.playerId);
@@ -754,7 +776,7 @@ function PlayerStatsTab({
     });
 
     return map;
-  }, [players, allScoresData]);
+  }, [players, allScoresData, rounds]);
 
   // Compute Strokes Gained
   const sgMap = useMemo<Map<number, PlayerStrokesGained>>(() => {
@@ -1043,6 +1065,7 @@ function PlayerStatsCharts({
   const combinedScores = useMemo(() => {
     const result: Score[] = [];
     rounds.forEach((round, i) => {
+      if (round.formatType === 'team_scramble') return;
       const offset = i * 100;
       const roundPlayerScores = allScoresData[i]?.filter(s => s.playerId === playerId) || [];
       roundPlayerScores.forEach(s => result.push({ ...s, holeNumber: s.holeNumber + offset }));
@@ -1053,6 +1076,7 @@ function PlayerStatsCharts({
   const combinedHoles = useMemo(() => {
     const result: any[] = [];
     rounds.forEach((round, i) => {
+      if (round.formatType === 'team_scramble') return;
       const offset = i * 100;
       (round.holes || []).forEach((h: any) => result.push({ ...h, number: h.number + offset }));
     });

@@ -179,6 +179,7 @@ const FORMAT_LABELS: Record<string, string> = {
   combined_stableford: "Combined Stableford",
   best_worst: "Best/Worst",
   pick_9: "Pick 9",
+  team_scramble: "Team Scramble",
 };
 
 function TournamentTeamExpanded({ teamId, rounds }: { teamId: number; rounds: Round[] }) {

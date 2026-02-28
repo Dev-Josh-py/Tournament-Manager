@@ -19,7 +19,7 @@ export interface PlayerStrokesGained {
  */
 export function calculateStrokesGained(
   allScoresData: Score[][],
-  rounds: { holes?: { number: number; par: number }[] }[],
+  rounds: { holes?: { number: number; par: number }[]; formatType?: string }[],
 ): Map<number, PlayerStrokesGained> {
   // Build field averages per (roundIndex, holeNumber)
   type HoleKey = string; // "roundIndex-holeNumber"
@@ -36,6 +36,9 @@ export function calculateStrokesGained(
   allScoresData.forEach((roundScores, roundIndex) => {
     const round = rounds[roundIndex];
     if (!round) return;
+
+    // Skip scramble rounds — no individual strokes gained
+    if (round.formatType === 'team_scramble') return;
 
     roundScores.forEach((score: Score) => {
       if (score.playerId == null || !score.grossScore) return;

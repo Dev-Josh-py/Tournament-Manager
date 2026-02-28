@@ -26,6 +26,7 @@ const getFormatBadgeColor = (formatType: string) => {
     case "better_ball_stableford": return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
     case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800";
     case "individual_stableford": return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
+    case "team_scramble": return "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800";
     default: return "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600";
   }
 };
@@ -353,6 +354,34 @@ function RoundDetailCard({
   const playerHandicapData = handicaps?.find(h => h.playerId === playerId);
 
   if (!round) return null;
+
+  // Team Scramble: show simplified view
+  if (round.formatType === 'team_scramble') {
+    const totalGross = playerScores.reduce((s, p) => s + (p.grossScore || 0), 0);
+    return (
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-base sm:text-xl truncate mr-2">{round.course.name}</h3>
+            <Badge className={clsx("text-[10px] sm:text-xs border flex-shrink-0", getFormatBadgeColor(round.formatType))}>Team Scramble</Badge>
+          </div>
+          {playerScores.length > 0 ? (
+            <div className="text-center py-6 space-y-2">
+              <div className="text-4xl font-bold">{totalGross}</div>
+              <div className="text-sm text-muted-foreground">Team Gross ({playerScores.length} holes)</div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Individual scorecard not applicable for Team Scramble format.
+              </p>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No scores recorded for this round
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (playerScores.length === 0) {
     return (

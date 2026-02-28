@@ -161,10 +161,54 @@ export default function Pick9Setup() {
 
   const selectedRound = rounds?.find(r => r.id === Number(selectedRoundId));
   const isPick9Round = selectedRound?.formatType === 'pick_9';
+  const isScrambleRound = selectedRound?.formatType === 'team_scramble';
+  const isSupportedRound = isPick9Round || isScrambleRound;
 
   const front9Count = assignments.filter(a => a.holeRange === "1-9").length;
   const back9Count = assignments.filter(a => a.holeRange === "10-18").length;
   const unassignedCount = assignments.filter(a => !a.holeRange).length;
+
+  // For scramble: current selection (all players same range)
+  const scrambleRange = isScrambleRound && assignments.length > 0 && assignments[0].holeRange
+    ? assignments[0].holeRange
+    : null;
+
+  const handleScrambleRangeSelect = (range: "1-9" | "10-18") => {
+    setAssignments(assignments.map(a => ({ ...a, holeRange: range })));
+  };
+
+  const handleSaveScrambleAssignments = async () => {
+    if (!selectedRoundId || !scrambleRange) {
+      toast({
+        title: "Error",
+        description: "Please select Front 9 or Back 9",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await upsertPick9Assignments.mutateAsync({
+        roundId: Number(selectedRoundId),
+        assignments: assignments.map(a => ({
+          playerId: a.playerId,
+          holeRange: a.holeRange!,
+        })),
+      });
+
+      toast({
+        title: "Success",
+        description: "9-hole selection saved successfully",
+        variant: "default",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save assignments",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Group players by team for display
   const playersByTeam = useMemo(() => {
@@ -196,7 +240,7 @@ export default function Pick9Setup() {
                   <SelectValue placeholder="Select a round..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {rounds?.filter(r => r.formatType === 'pick_9').map(round => (
+                  {rounds?.filter(r => r.formatType === 'pick_9' || r.formatType === 'team_scramble').map(round => (
                     <SelectItem key={round.id} value={String(round.id)}>
                       Round {round.roundNumber}: {round.date}
                     </SelectItem>
@@ -206,16 +250,62 @@ export default function Pick9Setup() {
             </CardContent>
           </Card>
 
-          {!isPick9Round && selectedRoundId && (
+          {!isSupportedRound && selectedRoundId && (
             <Card className="mb-6 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20">
               <CardContent className="pt-6 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-yellow-900 dark:text-yellow-300">Not a Pick 9 Round</p>
-                  <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">This round is not configured as a Pick 9 round.</p>
+                  <p className="text-sm font-medium text-yellow-900 dark:text-yellow-300">Not a Pick 9 / Scramble Round</p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">This round is not configured for 9-hole selection.</p>
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Scramble round: simple Front/Back 9 toggle */}
+          {selectedRoundId && isScrambleRound && (
+            <>
+              <Card className="mb-6 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+                <CardContent className="pt-6 space-y-2">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-300">Team Scramble - Select 9 Holes</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-400">
+                    All teams will play the same 9 holes. Choose Front 9 or Back 9.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <Button
+                  onClick={() => handleScrambleRangeSelect("1-9")}
+                  variant={scrambleRange === "1-9" ? "default" : "outline"}
+                  className={`h-20 text-lg font-bold ${scrambleRange === "1-9" ? "bg-primary text-white" : ""}`}
+                >
+                  Front 9
+                  <br />
+                  <span className="text-xs font-normal">Holes 1-9</span>
+                </Button>
+                <Button
+                  onClick={() => handleScrambleRangeSelect("10-18")}
+                  variant={scrambleRange === "10-18" ? "default" : "outline"}
+                  className={`h-20 text-lg font-bold ${scrambleRange === "10-18" ? "bg-primary text-white" : ""}`}
+                >
+                  Back 9
+                  <br />
+                  <span className="text-xs font-normal">Holes 10-18</span>
+                </Button>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleSaveScrambleAssignments}
+                  disabled={!scrambleRange || upsertPick9Assignments.isPending}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Selection
+                </Button>
+              </div>
+            </>
           )}
 
           {selectedRoundId && isPick9Round && (

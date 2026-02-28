@@ -215,6 +215,29 @@ async function seed() {
       ]
     },
     {
+      name: "Knysna Golf Club",
+      holes: [
+        { number: 1, par: 4, strokeIndex: 7 },
+        { number: 2, par: 3, strokeIndex: 9 },
+        { number: 3, par: 5, strokeIndex: 15 },
+        { number: 4, par: 4, strokeIndex: 3 },
+        { number: 5, par: 4, strokeIndex: 13 },
+        { number: 6, par: 4, strokeIndex: 1 },
+        { number: 7, par: 4, strokeIndex: 17 },
+        { number: 8, par: 3, strokeIndex: 11 },
+        { number: 9, par: 5, strokeIndex: 5 },
+        { number: 10, par: 4, strokeIndex: 8 },
+        { number: 11, par: 4, strokeIndex: 2 },
+        { number: 12, par: 3, strokeIndex: 10 },
+        { number: 13, par: 5, strokeIndex: 4 },
+        { number: 14, par: 3, strokeIndex: 18 },
+        { number: 15, par: 4, strokeIndex: 16 },
+        { number: 16, par: 5, strokeIndex: 6 },
+        { number: 17, par: 4, strokeIndex: 12 },
+        { number: 18, par: 4, strokeIndex: 14 },
+      ]
+    },
+    {
       name: "Mossel Bay GC",
       holes: [
         { number: 1, par: 4, strokeIndex: 13 },
@@ -261,7 +284,7 @@ async function seed() {
     { day: "Sunday Feb 22 (AM)", courseIdx: 1, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
     { day: "Sunday Feb 22 (PM)", courseIdx: 4, format: "individual_match_play", desc: "Match Play Stableford 1v1 (3 matches)" },
     { day: "Monday Feb 23 (AM)", courseIdx: 3, format: "combined_stableford", desc: "Combined Stableford (Add both players' points)" },
-    { day: "Monday Feb 23 (PM)", courseIdx: 5, format: "better_ball_stableford", desc: "Better Ball Stableford (Best score per hole)" },
+    { day: "Monday Feb 23 (PM)", courseIdx: 6, format: "team_scramble", desc: "Team Scramble (9 holes, gross strokes per team)" },
     { day: "Tuesday Feb 24", courseIdx: 6, format: "pick_9", desc: "Pick 9 Consecutive Holes Stableford" },
   ];
 

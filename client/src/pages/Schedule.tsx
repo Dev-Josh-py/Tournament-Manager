@@ -117,6 +117,7 @@ export default function Schedule() {
       case "better_ball_stableford": return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
       case "pick_9": return "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800";
       case "individual_stableford": return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
+      case "team_scramble": return "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800";
       default: return "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600";
     }
   };
@@ -147,10 +148,10 @@ export default function Schedule() {
                       {round.formatType === 'individual_match_play' && (
                         <MatchesStatusIndicator roundId={round.id} />
                       )}
-                      {round.formatType !== 'individual_match_play' && round.formatType !== 'individual_net' && round.formatType !== 'individual_stableford' && round.formatType !== 'pick_9' && (
+                      {round.formatType !== 'individual_match_play' && round.formatType !== 'individual_net' && round.formatType !== 'individual_stableford' && round.formatType !== 'pick_9' && round.formatType !== 'team_scramble' && (
                         <GroupingsStatusIndicator roundId={round.id} />
                       )}
-                      {round.formatType === 'pick_9' && (
+                      {(round.formatType === 'pick_9' || round.formatType === 'team_scramble') && (
                         <Pick9StatusIndicator roundId={round.id} />
                       )}
                     </div>
@@ -203,11 +204,11 @@ export default function Schedule() {
                           Configure Matches
                         </Button>
                       </Link>
-                    ) : round.formatType === 'pick_9' ? (
+                    ) : round.formatType === 'pick_9' || round.formatType === 'team_scramble' ? (
                       <Link href={`/pick9-setup?round=${round.id}`} className="flex-1">
                         <Button variant="outline" size="sm" className="w-full">
                           <Users className="w-4 h-4 mr-2" />
-                          Assign Pick 9
+                          {round.formatType === 'team_scramble' ? 'Select 9 Holes' : 'Assign Pick 9'}
                         </Button>
                       </Link>
                     ) : round.formatType === 'individual_stableford' ? (
