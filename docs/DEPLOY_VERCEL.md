@@ -8,8 +8,8 @@ the Express API runs as a serverless function, and the database stays on Neon.
 | Piece | Where it lives | Notes |
 | --- | --- | --- |
 | SPA | `dist/public`, built by `npm run build:client` | Served statically by Vercel's CDN |
-| API | `api/[...path].ts` → `server/app.ts` | One serverless function handles all `/api/*` |
-| Routing | `vercel.json` | Anything that isn't a real file and isn't `/api/*` falls back to `index.html` |
+| API | `api/index.ts` → `server/app.ts` | One serverless function handles all `/api/*` |
+| Routing | `vercel.json` | `/api/*` rewrites to the function; anything else that isn't a real file falls back to `index.html` |
 | Database | Neon Postgres | Unchanged — use the **pooled** connection string |
 
 `server/index.ts` (the long-running Node server) still exists and is what
@@ -88,6 +88,7 @@ scores.
 | API returns 500, logs show `ECONNREFUSED 127.0.0.1:5432` | `DATABASE_URL` missing or not applied to that environment |
 | API works, page routes 404 | `vercel.json` not committed |
 | Build fails on `@shared/...` import | A server file reintroduced a path alias; Vercel's function builder can't resolve tsconfig `paths`. Use a relative import (`../shared/...`) in anything under `server/` or `api/` |
+| `404 NOT_FOUND` on nested routes like `/api/auth/login` while `/api/teams` works | The `/api/:path*` rewrite in `vercel.json` is missing. Filesystem routing via `api/[...path].ts` only matched one segment, which is why the rewrite exists |
 | Blank page, console 404s on assets | Output directory drifted from `dist/public` |
 
 ## Known limitations
