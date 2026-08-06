@@ -1,5 +1,5 @@
 
-import { db } from "./db";
+import { db } from "./db.js";
 import {
   teams, players, rounds, courses, holes, scores, roundTeamPoints, roundHandicaps,
   roundGroupings, roundGroupingPlayers, matchPairings, pick9Assignments,
@@ -7,7 +7,7 @@ import {
   type PlayerBreakdown, type RoundLeaderboardEntry, type LeaderboardEntry, type RoundWithCourse,
   type RoundGrouping, type RoundGroupingPlayer, type RoundGroupingWithPlayers,
   type MatchPairing, type Pick9Assignment, type MatchPairingWithPlayers
-} from "../shared/schema";
+} from "../shared/schema.js";
 import { eq, and, asc, desc, sum, sql, inArray } from "drizzle-orm";
 
 export type RoundHandicapDisplay = {

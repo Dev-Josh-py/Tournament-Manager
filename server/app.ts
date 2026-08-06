@@ -1,5 +1,5 @@
 import express, { type Express, type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./routes.js";
 
 declare module "http" {
   interface IncomingMessage {

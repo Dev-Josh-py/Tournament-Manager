@@ -11,7 +11,7 @@ let appPromise: Promise<any> | null = null;
 // Imported lazily so a module-load failure surfaces as a readable JSON error
 // rather than an opaque FUNCTION_INVOCATION_FAILED from the platform.
 async function getApp() {
-  const { createApp } = await import("../server/app");
+  const { createApp } = await import("../server/app.js");
   return createApp();
 }
 

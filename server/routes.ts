@@ -1,8 +1,8 @@
 
 import type { Express } from "express";
-import { storage } from "./storage";
-import { api } from "../shared/routes";
-import { verifyPasscode, loginHandler } from "./auth";
+import { storage } from "./storage.js";
+import { api } from "../shared/routes.js";
+import { verifyPasscode, loginHandler } from "./auth.js";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<void> {
