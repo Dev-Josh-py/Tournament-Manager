@@ -1,15 +1,11 @@
 
 import type { Express } from "express";
-import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { api } from "@shared/routes";
+import { api } from "../shared/routes";
 import { verifyPasscode, loginHandler } from "./auth";
 import { z } from "zod";
 
-export async function registerRoutes(
-  httpServer: Server,
-  app: Express
-): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<void> {
 
   // Favicon - golf ball PNG, served with no-cache to override stale browser cache
   const faviconPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAn0lEQVR4nO2W0Q2AIAxEmcIt3MX9l9F/Q46760XU0IQfaXwvhZS2tkKI/dhOZk0Dx0XuP2QjIuKAkcjjcFsiCbcknPNWJGx47zuqFsqXBVzQfQ8KjEqv3glUya5E+uIhsSVQEhjlMPu2wKhJMU3s2xVIxBKwu2GiE777LWAkKmLyPKC880zOtKlo6lxow3sS6phWhiMRdpXBrkgc/Ou4APTHKeEwF1z5AAAAAElFTkSuQmCC", "base64");
@@ -246,8 +242,6 @@ export async function registerRoutes(
   // SEED DATA
   // Initialize standard data if empty
   await seedDatabase();
-
-  return httpServer;
 }
 
 async function seedDatabase() {

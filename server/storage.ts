@@ -7,7 +7,7 @@ import {
   type PlayerBreakdown, type RoundLeaderboardEntry, type LeaderboardEntry, type RoundWithCourse,
   type RoundGrouping, type RoundGroupingPlayer, type RoundGroupingWithPlayers,
   type MatchPairing, type Pick9Assignment, type MatchPairingWithPlayers
-} from "@shared/schema";
+} from "../shared/schema";
 import { eq, and, asc, desc, sum, sql, inArray } from "drizzle-orm";
 
 export type RoundHandicapDisplay = {

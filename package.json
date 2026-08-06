@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
+    "build:client": "vite build",
     "build:ios": "npm run build && npx cap sync ios",
     "open:ios": "npx cap open ios",
     "start": "NODE_ENV=production node dist/index.cjs",
