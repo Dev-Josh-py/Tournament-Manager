@@ -11,14 +11,14 @@
  * handicap_used are then recalculated with the same formula as
  * storage.ts:calculatePoints().
  *
- * Usage: npx tsx script/fix-kingswood-offset.ts [--apply]
+ * Usage: npx tsx script/fix-kingswood-offset.ts [--players=3,4,5,6] [--apply]
  * Without --apply it prints the diff and rolls back.
  */
 import { Pool } from "pg";
 
 const ROUND_ID = 6;
 const COURSE_ID = 6;
-const PLAYERS_TO_SHIFT = [3, 4, 5, 6]; // Keagan, Matt, Ross, Jaun
+const DEFAULT_PLAYERS_TO_SHIFT = [3, 4, 5, 6]; // Keagan, Matt, Ross, Jaun
 
 // Matt's official card, used as a guard so the rotation can't be applied twice.
 const MATT_EXPECTED = [4, 7, 6, 5, 3, 5, 5, 4, 6, 4, 5, 5, 6, 5, 7, 5, 4, 6];
@@ -48,6 +48,12 @@ const sum = (v: number[]) => v.reduce((a, b) => a + b, 0);
 
 async function main() {
   const apply = process.argv.includes("--apply");
+  const playersArg = process.argv.find((a) => a.startsWith("--players="));
+  const playersToShift = playersArg
+    ? playersArg.slice("--players=".length).split(",").map((n) => parseInt(n, 10))
+    : DEFAULT_PLAYERS_TO_SHIFT;
+  if (playersToShift.some(Number.isNaN)) throw new Error(`Bad --players value: ${playersArg}`);
+  console.log(`Rotating players: ${playersToShift.join(", ")}\n`);
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const client = await pool.connect();
 
@@ -79,7 +85,7 @@ async function main() {
     );
 
     // --- Rotate the four affected players ---
-    for (const playerId of PLAYERS_TO_SHIFT) {
+    for (const playerId of playersToShift) {
       const rows = allScores.filter((s) => s.player_id === playerId);
       if (rows.length !== 18) throw new Error(`Player ${playerId} has ${rows.length} scores, expected 18`);
 

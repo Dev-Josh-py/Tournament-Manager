@@ -78,11 +78,55 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  /**
+   * A round plays 18 holes, except team scrambles which play 9.
+   * Pick 9 rounds still play all 18 — only the scoring picks a subset.
+   */
+  private expectedHolesFor(formatType: string): number {
+    return formatType === 'team_scramble' ? 9 : 18;
+  }
+
+  /**
+   * `rounds.isCompleted` is derived rather than stored: a round is complete once
+   * every player on the roster has a score for every hole the round plays. The
+   * stored column is never written to anything but false, so it is ignored here.
+   */
+  private async getRoundCompletion(): Promise<Map<number, number>> {
+    // holes scored by the *least* complete player in each round
+    const rows = await db
+      .select({
+        roundId: scores.roundId,
+        playerId: scores.playerId,
+        holesScored: sql<number>`count(distinct ${scores.holeNumber})`.as('holes_scored'),
+      })
+      .from(scores)
+      .groupBy(scores.roundId, scores.playerId);
+
+    const byRound = new Map<number, Map<number, number>>();
+    for (const row of rows) {
+      if (row.roundId === null || row.playerId === null) continue;
+      if (!byRound.has(row.roundId)) byRound.set(row.roundId, new Map());
+      byRound.get(row.roundId)!.set(row.playerId, Number(row.holesScored));
+    }
+
+    const rosterSize = (await db.select({ id: players.id }).from(players)).length;
+
+    // Map of roundId -> holes completed by every player (0 if the roster is incomplete)
+    const completion = new Map<number, number>();
+    byRound.forEach((perPlayer, roundId) => {
+      const counts = Array.from(perPlayer.values());
+      completion.set(roundId, perPlayer.size < rosterSize ? 0 : Math.min(...counts));
+    });
+    return completion;
+  }
+
   async getRounds(): Promise<(RoundWithCourse & { holes: Hole[] })[]> {
     const allRounds = await db.query.rounds.findMany({
       with: { course: true },
       orderBy: asc(rounds.roundNumber)
     });
+
+    const completion = await this.getRoundCompletion();
 
     // Fetch holes for each round
     const roundsWithHoles = await Promise.all(
@@ -90,6 +134,7 @@ export class DatabaseStorage implements IStorage {
         const courseHoles = await db.select().from(holes).where(eq(holes.courseId, round.course.id));
         return {
           ...round,
+          isCompleted: (completion.get(round.id) ?? 0) >= this.expectedHolesFor(round.formatType),
           holes: courseHoles
         };
       })
@@ -110,9 +155,11 @@ export class DatabaseStorage implements IStorage {
 
     // Fetch holes separately to avoid nested relation issues with SQLite
     const courseHoles = await db.select().from(holes).where(eq(holes.courseId, round.course.id));
+    const completion = await this.getRoundCompletion();
 
     return {
       ...round,
+      isCompleted: (completion.get(round.id) ?? 0) >= this.expectedHolesFor(round.formatType),
       holes: courseHoles
     } as any;
   }
@@ -1343,7 +1390,39 @@ export class DatabaseStorage implements IStorage {
       },
       orderBy: asc(matchPairings.matchNumber)
     });
-    return pairings as MatchPairingWithPlayers[];
+
+    // Holes won / halved and completion are derived from the scores, the same way
+    // calculateIndividualMatchPlay() does it. The stored columns are never updated
+    // during scoring, so returning them as-is would report every match as 0-0.
+    // `winnerId` is left alone: on a drawn match it is the manual playoff result,
+    // which cannot be derived from the card.
+    const roundScores = await this.getRoundScores(roundId);
+    const pointsFor = (playerId: number, hole: number) =>
+      roundScores.find(s => s.playerId === playerId && s.holeNumber === hole)?.stablefordPoints ?? null;
+
+    return pairings.map(pairing => {
+      let player1HolesWon = 0;
+      let player2HolesWon = 0;
+      let holesHalved = 0;
+
+      for (let hole = 1; hole <= 18; hole++) {
+        const p1 = pointsFor(pairing.player1Id, hole);
+        const p2 = pointsFor(pairing.player2Id, hole);
+        if (p1 === null || p2 === null) continue;
+
+        if (p1 > p2) player1HolesWon++;
+        else if (p2 > p1) player2HolesWon++;
+        else holesHalved++;
+      }
+
+      // Decided on the card, or drawn and settled by a playoff.
+      const holesPlayed = player1HolesWon + player2HolesWon + holesHalved;
+      const isCompleted =
+        holesPlayed === 18 &&
+        (player1HolesWon !== player2HolesWon || pairing.winnerId !== null);
+
+      return { ...pairing, player1HolesWon, player2HolesWon, holesHalved, isCompleted };
+    }) as MatchPairingWithPlayers[];
   }
 
   async upsertMatchPairings(
